@@ -63,7 +63,7 @@
         <div v-else class="file-grid">
           <div v-for="file in filePage" :key="file.id" class="file-card">
             <div class="preview-wrapper">
-              <img v-if="isImage(file)" :src="file.accessUrl" :alt="file.fileName" class="preview-image" />
+              <img v-if="isImage(file)" :src="file.accessUrl" :alt="file.fileName" class="preview-image" @click="openImagePreview(file)" />
               <div v-else class="file-icon">
                 📄
               </div>
@@ -110,6 +110,14 @@
           <p>这个人很懒，什么都没有留下，只说自己爱吃炸排骨。。。</p>
         </div>
       </div>
+
+      <!-- 图片预览模态框 -->
+      <div v-if="showImagePreview" class="image-preview-modal" @click="closeImagePreview">
+        <div class="image-preview-content" @click.stop>
+          <img :src="selectedImageUrl" alt="预览图片" class="full-image" />
+          <div class="close-button" @click="closeImagePreview">✖</div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -152,7 +160,9 @@ export default {
       pageSize: 10,
       loading: false,
       hasMore: true, // 是否还有更多数据
-      filePage: []
+      filePage: [],
+      showImagePreview: false,
+      selectedImageUrl: ''
     };
   },
   computed: {
@@ -261,12 +271,76 @@ export default {
       if (isBottom && !this.loading && this.hasMore) {
         this.fetchFiles();
       }
+    },
+    // 打开图片预览
+    openImagePreview(file) {
+      this.selectedImageUrl = file.accessUrl;
+      this.showImagePreview = true;
+    },
+    // 关闭图片预览
+    closeImagePreview() {
+      this.showImagePreview = false;
+      this.selectedImageUrl = '';
     }
   }
 };
 </script>
 
 <style scoped>
+.image-preview-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 200;
+}
+
+.image-preview-content {
+  position: relative;
+  width: 90vw; /* 视口宽度的90% */
+  height: 90vh; /* 视口高度的90% */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.full-image {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain; /* 保持图片比例，完整显示 */
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: bold;
+  transition: background 0.2s;
+}
+
+.close-button:hover {
+  background: #fff;
+}
+
 .wip-container {
   padding: 2rem;
   height: 400px;
