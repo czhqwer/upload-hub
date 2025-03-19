@@ -234,6 +234,20 @@ logging:
 - 文件预览和管理
 - 分页加载已上传文件
 
+## 预览
+### 首页
+![alt text](images/image-1.png)
+
+### 已上传文件 页面
+![alt text](images/image-2.png)
+
+### 上传设置
+![alt text](images/image.png)
+
+### 存储配置
+![alt text](images/image-3.png)
+
+
 ## 贡献
 
 欢迎提交 Issue 或 Pull Request！
