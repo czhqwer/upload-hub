@@ -1,6 +1,7 @@
 package cn.czh.service.impl;
 
 import cn.czh.base.BusinessException;
+import cn.czh.context.StorageConfigUpdateEvent;
 import cn.czh.dto.FileRecordDTO;
 import cn.czh.dto.MyPartSummary;
 import cn.czh.dto.TaskInfoDTO;
@@ -16,12 +17,13 @@ import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.core.util.URLUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.PostConstruct;
@@ -50,17 +52,28 @@ public class LocalStorageService implements IStorageService {
 
     @PostConstruct
     public void init() {
+        this.refreshConfig();
+    }
+
+    private void refreshConfig() {
         this.storageConfig = storageConfigService.getStorageConfigByType(StorageConfig.LOCAL);
-        // Ensure the root directory exists
         File rootDir = new File(storageConfig.getBucket());
         if (!rootDir.exists()) {
-            boolean mkdirs = rootDir.mkdirs();
-            if (!mkdirs) {
+            if (!rootDir.mkdirs()) {
                 throw new BusinessException("无法创建根目录");
             }
         }
+        log.info("LocalStorageService refreshed successfully");
     }
 
+    @EventListener
+    public void handleConfigUpdate(StorageConfigUpdateEvent event) {
+        if (StorageConfig.LOCAL.equals(event.getNewConfig().getType())) {
+            refreshConfig();
+        }
+    }
+
+    @Transactional
     @Override
     public FileRecordDTO uploadFile(MultipartFile file, String md5, String objectName) {
         UploadFile uploadFile = getByIdentifier(md5);
@@ -129,6 +142,7 @@ public class LocalStorageService implements IStorageService {
         return result;
     }
 
+    @Transactional
     @Override
     public TaskInfoDTO createMultipartUpload(CreateMultipartUpload param) {
         String identifier = param.getIdentifier();
@@ -162,6 +176,7 @@ public class LocalStorageService implements IStorageService {
                 .setPath(generateWebUrl(objectKey));
     }
 
+    @Transactional
     @Override
     public UploadFile merge(String identifier) {
         UploadFile uploadFile = getByIdentifier(identifier);

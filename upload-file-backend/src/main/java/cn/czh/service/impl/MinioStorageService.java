@@ -1,6 +1,7 @@
 package cn.czh.service.impl;
 
 import cn.czh.base.BusinessException;
+import cn.czh.context.StorageConfigUpdateEvent;
 import cn.czh.dto.FileRecordDTO;
 import cn.czh.dto.MyPartSummary;
 import cn.czh.dto.TaskInfoDTO;
@@ -33,10 +34,11 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.minio.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.context.event.EventListener;
 import org.springframework.http.MediaType;
 import org.springframework.http.MediaTypeFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.PostConstruct;
@@ -79,14 +81,25 @@ public class MinioStorageService implements IStorageService {
 
     @PostConstruct
     public void init() {
+        this.refreshConfig();
+    }
+
+    private void refreshConfig() {
         this.storageConfig = storageConfigService.getStorageConfigByType(StorageConfig.MINIO);
         this.minioClient = MinioClient.builder()
                 .endpoint(storageConfig.getEndpoint())
                 .credentials(storageConfig.getAccessKey(), storageConfig.getSecretKey())
                 .build();
         this.amazonS3 = minioAmazonS3Client(storageConfig);
+        log.info("MinioStorageService refreshed successfully");
     }
 
+    @EventListener
+    public void handleConfigUpdate(StorageConfigUpdateEvent event) {
+        if (StorageConfig.MINIO.equals(event.getNewConfig().getType())) {
+            refreshConfig();
+        }
+    }
 
     private AmazonS3 minioAmazonS3Client(StorageConfig storageConfig) {
         // 设置连接时的参数
@@ -107,7 +120,7 @@ public class MinioStorageService implements IStorageService {
                 .build();
     }
 
-
+    @Transactional
     @Override
     public FileRecordDTO uploadFile(MultipartFile file, String md5, String objectName) {
 
@@ -179,6 +192,7 @@ public class MinioStorageService implements IStorageService {
         return result;
     }
 
+    @Transactional
     @Override
     public TaskInfoDTO createMultipartUpload(CreateMultipartUpload param) {
         Date currentDate = new Date();
@@ -203,7 +217,7 @@ public class MinioStorageService implements IStorageService {
         return new TaskInfoDTO().setFinished(false).setTaskRecord(TaskRecordDTO.convertFromEntity(task)).setPath(getPath(key));
     }
 
-
+    @Transactional
     @Override
     public UploadFile merge(String identifier) {
         UploadFile uploadFile = getByIdentifier(identifier);
@@ -272,19 +286,6 @@ public class MinioStorageService implements IStorageService {
         return initiateMultipartUploadResult.getUploadId();
     }
 
-
-    @Scheduled(fixedRate = 60000) // 每分钟检查一次
-    public void refreshStorageConfig() {
-        StorageConfig newConfig = storageConfigService.getStorageConfigByType(StorageConfig.MINIO);
-        if (!newConfig.equals(this.storageConfig)) {
-            this.storageConfig = newConfig;
-            this.minioClient = MinioClient.builder()
-                    .endpoint(newConfig.getEndpoint())
-                    .credentials(newConfig.getAccessKey(), newConfig.getSecretKey())
-                    .build();
-            log.info("StorageConfig refreshed successfully");
-        }
-    }
 
     /**
      * 获取文件访问URL

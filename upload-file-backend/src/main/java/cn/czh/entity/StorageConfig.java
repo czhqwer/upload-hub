@@ -7,6 +7,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import java.io.Serializable;
 
 @Data
@@ -32,6 +34,8 @@ public class StorageConfig implements Serializable {
     /**
      * 存储类型：'local','minio','oss','obs'
      */
+    @NotNull(message = "存储类型不能为空")
+    @Pattern(regexp = "local|minio|oss|obs", message = "存储类型必须是 'local', 'minio', 'oss', 'obs' 之一")
     private String type;
 
     /**

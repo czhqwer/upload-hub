@@ -21,15 +21,21 @@ public class Result<T> implements Serializable {
     private T data;
 
     /**
-     * 操作失败，无返回值
+     * 操作失败，无返回值（自定义状态码）
      */
-    public static <T> Result<T> error(String msg) {
+    public static <T> Result<T> error(int code, String msg) {
         Result<T> responseWrapper = new Result<>();
+        responseWrapper.setCode(code);
         responseWrapper.setMsg(msg);
-        responseWrapper.setCode(500);
         return responseWrapper;
     }
 
+    /**
+     * 操作失败，无返回值（默认 500）
+     */
+    public static <T> Result<T> error(String msg) {
+        return error(500, msg);
+    }
 
     /**
      * 操作成功，无返回值

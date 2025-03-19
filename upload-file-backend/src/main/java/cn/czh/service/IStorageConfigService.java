@@ -9,4 +9,9 @@ public interface IStorageConfigService {
      */
     StorageConfig getStorageConfigByType(String type);
 
+    /**
+     * 更新存储配置
+     */
+    void updateStorageConfig(StorageConfig config);
+
 }

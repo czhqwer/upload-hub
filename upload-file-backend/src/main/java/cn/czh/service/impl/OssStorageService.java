@@ -1,6 +1,7 @@
 package cn.czh.service.impl;
 
 import cn.czh.base.BusinessException;
+import cn.czh.context.StorageConfigUpdateEvent;
 import cn.czh.dto.FileRecordDTO;
 import cn.czh.dto.MyPartSummary;
 import cn.czh.dto.TaskInfoDTO;
@@ -22,7 +23,9 @@ import com.aliyun.oss.model.*;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.PostConstruct;
@@ -55,19 +58,30 @@ public class OssStorageService implements IStorageService {
 
     @PostConstruct
     public void init() {
-        // 获取 OSS 配置
+        this.refreshConfig();
+    }
+
+    private void refreshConfig() {
         this.storageConfig = storageConfigService.getStorageConfigByType(StorageConfig.OSS);
-        // 初始化 OSS 客户端
         this.ossClient = new OSSClientBuilder().build(
                 storageConfig.getEndpoint(),
                 storageConfig.getAccessKey(),
                 storageConfig.getSecretKey()
         );
+        log.info("OssStorageService refreshed successfully");
+    }
+
+    @EventListener
+    public void handleConfigUpdate(StorageConfigUpdateEvent event) {
+        if (StorageConfig.OSS.equals(event.getNewConfig().getType())) {
+            refreshConfig();
+        }
     }
 
     /**
      * 上传单个文件
      */
+    @Transactional
     @Override
     public FileRecordDTO uploadFile(MultipartFile file, String md5, String objectName) {
         UploadFile uploadFile = getByIdentifier(md5);
@@ -155,6 +169,7 @@ public class OssStorageService implements IStorageService {
     /**
      * 创建分片上传任务
      */
+    @Transactional
     @Override
     public TaskInfoDTO createMultipartUpload(CreateMultipartUpload param) {
         String identifier = param.getIdentifier();
@@ -194,6 +209,7 @@ public class OssStorageService implements IStorageService {
     /**
      * 合并分片
      */
+    @Transactional
     @Override
     public UploadFile merge(String identifier) {
         UploadFile uploadFile = getByIdentifier(identifier);
