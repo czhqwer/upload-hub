@@ -10,7 +10,8 @@
         <div class="menu-container" @mouseenter="showMenu = true" @mouseleave="showMenu = false">
           <div class="menu-icon">☰</div>
           <div v-show="showMenu" class="dropdown-menu">
-            <div class="menu-item" @click="openSettings">设置</div>
+            <div class="menu-item" @click="openSettings">上传设置</div>
+            <div class="menu-item" @click="openStorageConfig">存储配置</div>
             <div class="menu-item" @click="openAbout">关于</div>
           </div>
         </div>
@@ -52,7 +53,8 @@
           </select>
 
           <label for="storage-select">&nbsp;&nbsp;&nbsp;&nbsp;文件名:</label>
-          <el-input v-model="selectedFileName" placeholder="请输入文件名" class="file-name-input" style="width: 150px;" @change="fetchFiles(true)"></el-input>
+          <el-input v-model="selectedFileName" placeholder="请输入文件名" class="file-name-input" style="width: 150px;"
+            @change="fetchFiles(true)"></el-input>
         </div>
         <div v-if="filePage.length === 0 && !loading" class="empty-tips">
           🖼️ 暂无已上传的文件
@@ -63,7 +65,8 @@
         <div v-else class="file-grid">
           <div v-for="file in filePage" :key="file.id" class="file-card">
             <div class="preview-wrapper">
-              <img v-if="isImage(file)" :src="file.accessUrl" :alt="file.fileName" class="preview-image" @click="openImagePreview(file)" />
+              <img v-if="isImage(file)" :src="file.accessUrl" :alt="file.fileName" class="preview-image"
+                @click="openImagePreview(file)" />
               <div v-else class="file-icon">
                 📄
               </div>
@@ -118,13 +121,53 @@
           <div class="close-button" @click="closeImagePreview">✖</div>
         </div>
       </div>
+
+      <!-- 存储配置弹窗 -->
+      <div v-if="showStorageConfig" class="storage-config-modal" @click="closeStorageConfigOnOutside">
+        <div class="storage-config-content" @click.stop>
+          <h2>存储系统配置</h2>
+
+          <!-- 存储类型选择 -->
+          <div class="form-group">
+            <label>存储类型:</label>
+            <select v-model="newConfig.type" @change="switchStorageType">
+              <option v-for="option in storageOptions" :key="option.value" :value="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Endpoint:</label>
+            <input v-model="newConfig.endpoint" type="text" placeholder="请输入Endpoint" />
+          </div>
+          <div class="form-group" v-if="newConfig.type !== 'local'">
+            <label>Access Key:</label>
+            <input v-model="newConfig.accessKey" type="text" placeholder="请输入Access Key" />
+          </div>
+          <div class="form-group" v-if="newConfig.type !== 'local'">
+            <label>Secret Key:</label>
+            <input v-model="newConfig.secretKey" type="password" placeholder="请输入Secret Key" />
+          </div>
+          <div class="form-group">
+            <label>Bucket:</label>
+            <input v-model="newConfig.bucket" type="text" placeholder="请输入Bucket" />
+          </div>
+
+          <!-- 操作按钮 -->
+          <div class="form-actions">
+            <button type="button" @click="saveStorageConfig">保存</button>
+            <button type="button" @click="closeStorageConfig">取消</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
 import UploadFile from '@/components/UploadFile/UploadFile.vue';
-import { pageFiles } from '@/utils/api';
+import { getStorageConfig, setStorageConfig, pageFiles } from '@/utils/api';
 
 export default {
   name: 'FileUpload',
@@ -162,7 +205,19 @@ export default {
       hasMore: true, // 是否还有更多数据
       filePage: [],
       showImagePreview: false,
-      selectedImageUrl: ''
+      selectedImageUrl: '',
+      showStorageConfig: false, // 控制存储配置弹窗显示
+      storageConfigs: [], // 存储配置列表
+      editingConfig: null, // 当前编辑的配置对象
+      newConfig: { // 新增配置时的默认值
+        id: null,
+        type: 'local',
+        endpoint: '',
+        accessKey: '',
+        secretKey: '',
+        bucket: ''
+      },
+      loadingConfig: false
     };
   },
   computed: {
@@ -186,8 +241,8 @@ export default {
         this.fetchFiles(true);
       } else if (this.isWipTab) {
         this.$message({
-          message: tabValue === 'obs' 
-            ? 'OBS功能正在施工中，小哥哥们正在挥汗如雨！' 
+          message: tabValue === 'obs'
+            ? 'OBS功能正在施工中，小哥哥们正在挥汗如雨！'
             : '七牛云功能开发中，程序员正在和咖啡斗智斗勇！',
           type: 'info',
           duration: 2000
@@ -252,7 +307,7 @@ export default {
           storageType: this.selectedStorageType,
           fileName: this.selectedFileName
         });
-        const files = response.data.records || []; 
+        const files = response.data.records || [];
         this.filePage = reset ? files : this.filePage.concat(files);
         this.hasMore = files.length === this.pageSize;
         if (this.hasMore) this.currentPage++;
@@ -281,7 +336,79 @@ export default {
     closeImagePreview() {
       this.showImagePreview = false;
       this.selectedImageUrl = '';
-    }
+    },
+    // 打开存储配置弹窗
+    async openStorageConfig() {
+      this.showStorageConfig = true;
+      this.showMenu = false;
+      await this.fetchStorageConfig(); // 加载配置
+    },
+    // 获取存储配置
+    async fetchStorageConfig() {
+      this.loadingConfig = true;
+      try {
+        const response = await getStorageConfig({ type: this.newConfig.type });
+        const config = response.data;
+        if (config) {
+          // 如果有配置，填充到 newConfig
+          this.newConfig = {
+            id: config.id || null,
+            type: config.type || this.newConfig.type,
+            endpoint: config.endpoint || '',
+            accessKey: config.accessKey || '',
+            secretKey: config.secretKey || '',
+            bucket: config.bucket || ''
+          };
+        } else {
+          // 如果没有配置，重置字段
+          this.resetConfigFields();
+        }
+      } catch (error) {
+        console.error('获取存储配置失败:', error);
+        this.$message.error('获取存储配置失败');
+        this.resetConfigFields(); // 出错时重置
+      } finally {
+        this.loadingConfig = false;
+      }
+    },
+    // 关闭存储配置弹窗
+    closeStorageConfig() {
+      this.showStorageConfig = false;
+    },
+    // 点击外部关闭弹窗
+    closeStorageConfigOnOutside(event) {
+      if (event.target.classList.contains('storage-config-modal')) {
+        this.closeStorageConfig();
+      }
+    },
+
+    // 切换存储类型时重新加载配置
+    async switchStorageType() {
+      await this.fetchStorageConfig(); // 类型变化时重新获取配置
+    },
+    // 重置配置字段
+    resetConfigFields() {
+      this.newConfig = {
+        id: null,
+        type: this.newConfig.type, // 保留当前类型
+        endpoint: '',
+        accessKey: '',
+        secretKey: '',
+        bucket: ''
+      };
+    },
+    // 保存存储配置
+    async saveStorageConfig() {
+      try {
+        const configToSave = { ...this.newConfig };
+        await setStorageConfig(configToSave); // 调用 API 保存配置
+        this.$message.success('存储配置保存成功');
+        this.closeStorageConfig();
+      } catch (error) {
+        console.error('保存存储配置失败:', error);
+        this.$message.error('保存存储配置失败');
+      }
+    },
   }
 };
 </script>
@@ -302,8 +429,10 @@ export default {
 
 .image-preview-content {
   position: relative;
-  width: 90vw; /* 视口宽度的90% */
-  height: 90vh; /* 视口高度的90% */
+  width: 90vw;
+  /* 视口宽度的90% */
+  height: 90vh;
+  /* 视口高度的90% */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -314,7 +443,8 @@ export default {
   max-height: 100%;
   width: auto;
   height: auto;
-  object-fit: contain; /* 保持图片比例，完整显示 */
+  object-fit: contain;
+  /* 保持图片比例，完整显示 */
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
@@ -776,6 +906,173 @@ export default {
 @media (max-width: 480px) {
   .tab {
     padding: 10px 16px;
+  }
+}
+
+/* 存储配置弹窗样式优化 */
+.storage-config-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(25, 118, 210, 0.2);
+  /* 使用主题色透明背景 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+  /* 背景模糊效果 */
+  animation: modal-fade 0.3s ease-out;
+}
+
+.storage-config-content {
+  background: #ffffff;
+  padding: 2rem;
+  border-radius: 12px;
+  width: 480px;
+  box-shadow: 0 8px 32px rgba(25, 118, 210, 0.15);
+  transform-origin: center;
+  animation: modal-scale 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.storage-config-content h2 {
+  color: #1976d2;
+  font-size: 1.5rem;
+  margin: 0 0 2rem;
+  text-align: center;
+  position: relative;
+  padding-bottom: 0.5rem;
+}
+
+.storage-config-content h2::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 3px;
+  background: rgba(25, 118, 210, 0.2);
+  border-radius: 2px;
+}
+
+/* 表单元素优化 */
+.form-group {
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: #4a5568;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group select {
+  width: 93%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  background: #f8fafc;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #1976d2;
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+  background: #ffffff;
+  outline: none;
+}
+
+.form-group select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' class='h-6 w-6' fill='none' viewBox='0 0 24 24' stroke='%234a5568'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1.2em;
+}
+
+/* 操作按钮区域 */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  /* 与表单内容分隔 */
+}
+
+/* 按钮样式 */
+.form-actions button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+/* 保存按钮 */
+.form-actions button:first-child {
+  background: #1976d2;
+  color: white;
+  box-shadow: 0 2px 6px rgba(25, 118, 210, 0.3);
+}
+
+.form-actions button:first-child:hover {
+  background: #1565c0;
+  box-shadow: 0 4px 10px rgba(25, 118, 210, 0.4);
+}
+
+/* 取消按钮 */
+.form-actions button:last-child {
+  background: #f0f7ff;
+  color: #1976d2;
+  border: 1px solid #d0e4fc;
+}
+
+.form-actions button:last-child:hover {
+  background: #e3f2fd;
+  border-color: #1976d2;
+}
+
+/* 动画效果 */
+@keyframes modal-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-scale {
+  from {
+    transform: scale(0.95);
+  }
+
+  to {
+    transform: scale(1);
+  }
+}
+
+/* 响应式调整 */
+@media (max-width: 640px) {
+  .storage-config-content {
+    width: 90%;
+    padding: 1.5rem;
+  }
+
+  .form-actions {
+    flex-direction: column;
   }
 }
 </style>

@@ -126,6 +126,40 @@ const pageFiles = ({ page = 1, pageSize = 10, storageType, fileName }) => {
   });
 };
 
+/**
+ * 根据存储类型获取存储配置
+ * @param {Object} params 参数对象
+ * @param {string} params.type 类型 
+ * @returns 
+ */
+const getStorageConfig = ({ type}) => {
+    return http.get('/config', {
+        params: { type }
+    });
+};
+
+/**
+ * 修改存储配置
+ * @param {Object} params 参数对象
+ * @param {number} params.id id
+ * @param {string} params.type 类型
+ * @param {string} params.endpoint endpoint
+ * @param {string} params.accessKey accessKey
+ * @param {string} params.secretKey secretKey
+ * @param {string} params.bucket bucket
+ * @returns 
+ */
+const setStorageConfig = ({ id, type, endpoint, accessKey, secretKey, bucket }) => {
+    return http.patch('/config', {
+        id,
+        type,
+        endpoint,
+        accessKey,
+        secretKey,
+        bucket
+    });
+}
+
 export {
     getUploadProgress,
     createMultipartUpload,
@@ -134,5 +168,7 @@ export {
     uploadFile,
     uploadPart,
     pageFiles,
+    getStorageConfig,
+    setStorageConfig,
     httpExtra
 };
