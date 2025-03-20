@@ -1,5 +1,7 @@
 package cn.czh.utils;
 
+import org.springframework.http.MediaType;
+
 /**
  * 文件类型的工具类
  */
@@ -157,5 +159,62 @@ public class FileTypeUtil {
             }
         }
 		return false;
+	}
+
+	/**
+	 * 根据文件后缀确定 Content-Type
+	 */
+	public static MediaType determineContentType(String fileSuffix) {
+		// 使用 FileTypeUtil 判断文件类型
+		if (FileTypeUtil.isImgType(fileSuffix)) {
+			switch (fileSuffix) {
+				case "jpg":
+				case "jpeg":
+					return MediaType.IMAGE_JPEG;
+				case "png":
+					return MediaType.IMAGE_PNG;
+				case "gif":
+					return MediaType.IMAGE_GIF;
+				default:
+					return MediaType.APPLICATION_OCTET_STREAM;
+			}
+		} else if (FileTypeUtil.bVideoFileType("example." + fileSuffix)) {
+			switch (fileSuffix) {
+				case "mp4":
+					return MediaType.valueOf("video/mp4");
+				case "avi":
+					return MediaType.valueOf("video/x-msvideo");
+				case "wmv":
+					return MediaType.valueOf("video/x-ms-wmv");
+				default:
+					return MediaType.APPLICATION_OCTET_STREAM;
+			}
+		} else if (FileTypeUtil.bAudioFileType("example." + fileSuffix)) {
+			switch (fileSuffix) {
+				case "mp3":
+					return MediaType.valueOf("audio/mpeg");
+				case "wav":
+					return MediaType.valueOf("audio/wav");
+				default:
+					return MediaType.APPLICATION_OCTET_STREAM;
+			}
+		} else if (FileTypeUtil.bLogFileType("example." + fileSuffix)) {
+			switch (fileSuffix) {
+				case "txt":
+					return MediaType.TEXT_PLAIN;
+				case "log":
+					return MediaType.valueOf("text/plain");
+				case "doc":
+				case "docx":
+					return MediaType.valueOf("application/msword");
+				default:
+					return MediaType.APPLICATION_OCTET_STREAM;
+			}
+		} else if ("pdf".equals(fileSuffix)) {
+			return MediaType.APPLICATION_PDF;
+		}
+
+		// 默认类型
+		return MediaType.APPLICATION_OCTET_STREAM;
 	}
 }

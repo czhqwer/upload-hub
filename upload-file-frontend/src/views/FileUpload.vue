@@ -65,8 +65,18 @@
         <div v-else class="file-grid">
           <div v-for="file in filePage" :key="file.id" class="file-card">
             <div class="preview-wrapper">
+              <!-- 图片预览 -->
               <img v-if="isImage(file)" :src="file.accessUrl" :alt="file.fileName" class="preview-image"
                 @click="openImagePreview(file)" loading="lazy" />
+              <!-- 视频预览 -->
+              <div v-else-if="isVideo(file)" class="video-preview" @click="openVideoPreview(file)">
+                <div class="play-button">▶</div>
+              </div>
+              <!-- PDF 预览 -->
+              <div v-else-if="isPdf(file)" class="pdf-preview" @click="openPdfPreview(file)">
+                <div class="pdf-icon">📜</div>
+              </div>
+              <!-- 其他文件类型 -->
               <div v-else class="file-icon">
                 📄
               </div>
@@ -122,6 +132,34 @@
         <div class="image-preview-content" @click.stop>
           <img :src="selectedImageUrl" alt="预览图片" class="full-image" />
           <div class="close-button" @click="closeImagePreview">✖</div>
+        </div>
+      </div>
+
+      <!-- 视频预览模态框 -->
+      <div v-if="showVideoPreview" class="video-preview-modal" @click="closeVideoPreview">
+        <div class="video-preview-content" @click.stop>
+          <video :src="selectedVideoUrl" controls class="full-video" autoplay></video>
+          <div class="close-button" @click="closeVideoPreview">✖</div>
+        </div>
+      </div>
+
+      <!-- PDF 预览模态框 -->
+      <div v-if="showPdfPreview" class="pdf-preview-modal" @click="closePdfPreview">
+        <div class="pdf-preview-content" @click.stop>
+          <!-- 加载动画 -->
+          <div v-if="loadingPdf" class="loading-overlay">
+            <div class="loading-spinner"></div>
+            <p>加载 PDF 中...</p>
+          </div>
+          <!-- PDF 内容 -->
+          <iframe
+            v-show="!loadingPdf"
+            :src="selectedPdfUrl"
+            class="full-pdf"
+            frameborder="0"
+            @load="onPdfLoad"
+          ></iframe>
+          <div class="close-button" @click="closePdfPreview">✖</div>
         </div>
       </div>
 
@@ -220,7 +258,12 @@ export default {
         secretKey: '',
         bucket: ''
       },
-      loadingConfig: false
+      loadingConfig: false,
+      showVideoPreview: false,
+      selectedVideoUrl: '',
+      showPdfPreview: false,
+      selectedPdfUrl: '',
+      loadingPdf: false,
     };
   },
   computed: {
@@ -238,6 +281,40 @@ export default {
     }
   },
   methods: {
+    // 判断是否为 PDF
+    isPdf(file) {
+      return file.contentType === 'application/pdf';
+    },
+    // 打开 PDF 预览
+    openPdfPreview(file) {
+      this.selectedPdfUrl = `${file.accessUrl}?response-content-disposition=inline`;
+      this.showPdfPreview = true;
+      this.loadingPdf = true;
+    },
+    // PDF 加载完成
+    onPdfLoad() {
+      this.loadingPdf = false; // 加载完成隐藏动画
+    },
+    // 关闭 PDF 预览
+    closePdfPreview() {
+      this.showPdfPreview = false;
+      this.selectedPdfUrl = '';
+      this.loadingPdf = false;
+    },
+    // 判断是否为视频
+    isVideo(file) {
+      return file.contentType.startsWith('video/');
+    },
+    // 打开视频预览
+    openVideoPreview(file) {
+      this.selectedVideoUrl = file.accessUrl;
+      this.showVideoPreview = true;
+    },
+    // 关闭视频预览
+    closeVideoPreview() {
+      this.showVideoPreview = false;
+      this.selectedVideoUrl = '';
+    },
     switchTab(tabValue) {
       this.activeTab = tabValue;
       if (tabValue === 'gallery') {
@@ -292,8 +369,6 @@ export default {
     },
     // 获取文件列表
     async fetchFiles(reset = false) {
-      console.log('fetchFiles called with reset:', reset, this.loading, this.hasMore); // 调试日志
-
       if (this.loading || (!reset && !this.hasMore)) return;
 
       this.loading = true;
@@ -482,6 +557,7 @@ export default {
   font-size: 18px;
   font-weight: bold;
   transition: background 0.2s;
+  z-index: 9999;
 }
 
 .close-button:hover {
@@ -873,6 +949,167 @@ export default {
 .form-actions button[type="button"] {
   background: #eee;
   color: #333;
+}
+
+
+/* 视频预览相关样式 */
+.video-preview {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.play-button {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 20px;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+  margin-top: -105px;
+}
+
+.video-preview:hover .play-button {
+  opacity: 1;
+}
+
+/* 视频预览模态框 */
+.video-preview-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 200;
+}
+
+.video-preview-content {
+  position: relative;
+  width: 90vw;
+  height: 90vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.full-video {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* 加载动画样式 */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 201;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f0f7ff;
+  border-top: 4px solid #1976d2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-overlay p {
+  margin-top: 10px;
+  color: #fff;
+  font-size: 14px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* PDF 预览相关样式 */
+.pdf-preview {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.pdf-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 2rem;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+  margin-top: -105px;
+}
+
+/* PDF 预览模态框 */
+.pdf-preview-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 200;
+}
+
+.pdf-preview-content {
+  position: relative;
+  width: 90vw; /* 设置为视口的90%宽度 */
+  height: 90vh; /* 设置为视口的90%高度 */
+  background: #fff;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.full-pdf {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  background: #fff;
 }
 
 /* 关于弹窗样式 */

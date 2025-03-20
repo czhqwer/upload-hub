@@ -4,8 +4,9 @@ import cn.czh.base.Result;
 import cn.czh.entity.StorageConfig;
 import cn.czh.service.IFileService;
 import cn.czh.service.IStorageConfigService;
+import cn.czh.utils.FileTypeUtil;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,6 +19,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 
 @RestController
 @RequestMapping("/file")
@@ -29,7 +31,7 @@ public class FileController {
     private IFileService fileService;
 
     @GetMapping("/preview/{storageType}/**")
-    public ResponseEntity<byte[]> previewFile(
+    public ResponseEntity<?> previewFile(
             @PathVariable String storageType,
             HttpServletRequest request) throws IOException {
         // 从请求中提取剩余路径作为 objectKey
@@ -39,16 +41,37 @@ public class FileController {
 
         if (StorageConfig.LOCAL.equals(storageType)) {
             StorageConfig storageConfig = storageConfigService.getStorageConfigByType(storageType);
-            String filePath = storageConfig.getBucket() + "\\" + objectKey;
+            // 使用 Paths.get 拼接路径，避免反斜杠问题
+            String filePath = Paths.get(storageConfig.getBucket(), objectKey).toString();
             File file = new File(filePath);
+
+            // 检查文件是否存在
             if (!file.exists()) {
                 return ResponseEntity.notFound().build();
             }
+
+            // 读取文件内容
             byte[] fileBytes = Files.readAllBytes(file.toPath());
+            ByteArrayResource resource = new ByteArrayResource(fileBytes);
+
+            // 设置响应头
             HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-            return new ResponseEntity<>(fileBytes, headers, HttpStatus.OK);
+            String fileName = file.getName().toLowerCase();
+            String fileSuffix = FileTypeUtil.getFileSuffix(fileName).toLowerCase();
+
+            // 根据文件类型设置 Content-Type
+            MediaType contentType = FileTypeUtil.determineContentType(fileSuffix);
+            headers.setContentType(contentType);
+
+            // 设置 Content-Disposition 为 inline，浏览器直接预览
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + file.getName() + "\"");
+            headers.setContentLength(fileBytes.length);
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(resource);
         }
+
         return ResponseEntity.badRequest().build();
     }
 
