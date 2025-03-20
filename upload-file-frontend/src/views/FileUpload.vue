@@ -66,9 +66,12 @@
           <div v-for="file in filePage" :key="file.id" class="file-card">
             <div class="preview-wrapper">
               <img v-if="isImage(file)" :src="file.accessUrl" :alt="file.fileName" class="preview-image"
-                @click="openImagePreview(file)" />
+                @click="openImagePreview(file)" loading="lazy" />
               <div v-else class="file-icon">
                 📄
+              </div>
+              <div class="copy-button" @click.stop="copyUrl(file.accessUrl)" title="复制文件URL" style="font-size: 20px;">
+                📋
               </div>
             </div>
             <div class="file-meta">
@@ -409,6 +412,20 @@ export default {
         this.$message.error('保存存储配置失败');
       }
     },
+    // 复制URL
+    async copyUrl(url) {
+      try {
+        await navigator.clipboard.writeText(url);
+        this.$message({
+          message: '文件URL已复制到剪贴板',
+          type: 'success',
+          duration: 2000
+        });
+      } catch (error) {
+        console.error('复制URL失败:', error);
+        this.$message.error('复制URL失败');
+      }
+    }
   }
 };
 </script>
@@ -679,6 +696,7 @@ export default {
 }
 
 .file-card {
+  position: relative;
   background: #fff;
   border-radius: 6px;
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
@@ -689,6 +707,40 @@ export default {
 .file-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 3px 8px rgba(25, 118, 210, 0.2);
+}
+
+.copy-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  font-size: 14px;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.file-card:hover .copy-button {
+  opacity: 1;
+}
+
+.copy-button:hover {
+  transform: scale(1.2);
+  background: #fff;
+}
+
+@media (max-width: 768px) {
+  .copy-button {
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+  }
 }
 
 .preview-wrapper {
