@@ -13,5 +13,6 @@
             </if>
             and is_finish = 1
         </where>
+        order by id desc
     </select>
 </mapper>
