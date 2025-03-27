@@ -14,4 +14,9 @@ public interface IStorageConfigService {
      */
     void updateStorageConfig(StorageConfig config);
 
+    /**
+     * 测试存储配置
+     */
+    void testStorageConfig(StorageConfig config);
+
 }

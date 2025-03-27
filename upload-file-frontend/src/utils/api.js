@@ -160,6 +160,26 @@ const setStorageConfig = ({ id, type, endpoint, accessKey, secretKey, bucket }) 
     });
 }
 
+/**
+ * 测试存储配置
+ * @param {Object} params 参数对象
+ * @param {string} params.type 类型
+ * @param {string} params.endpoint endpoint
+ * @param {string} params.accessKey accessKey
+ * @param {string} params.secretKey secretKey
+ * @param {string} params.bucket bucket
+ * @returns 
+ */
+const testStorageConfig = ({ type, endpoint, accessKey, secretKey, bucket }) => {
+    return http.post('/config/test', {
+        type,
+        endpoint,
+        accessKey,
+        secretKey,
+        bucket
+    });
+}
+
 export {
     getUploadProgress,
     createMultipartUpload,
@@ -170,5 +190,6 @@ export {
     pageFiles,
     getStorageConfig,
     setStorageConfig,
+    testStorageConfig,
     httpExtra
 };

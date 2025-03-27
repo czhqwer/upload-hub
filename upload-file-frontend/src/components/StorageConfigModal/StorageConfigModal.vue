@@ -27,15 +27,18 @@
         <input v-model="config.bucket" type="text" placeholder="请输入Bucket" />
       </div>
       <div class="form-actions">
-        <button type="button" @click="saveConfig">保存</button>
-        <button type="button" @click="close">取消</button>
+        <button type="button" @click="testConfig" :disabled="testing">
+          {{ testing ? '测试中...' : '测试连接' }}
+        </button>
+        <button type="button" @click="saveConfig" :disabled="testing">保存</button>
+        <button type="button" @click="close" :disabled="testing">取消</button>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { getStorageConfig, setStorageConfig } from '@/utils/api';
+import { getStorageConfig, setStorageConfig, testStorageConfig } from '@/utils/api';
 
 export default {
   name: 'StorageConfigModal',
@@ -51,7 +54,8 @@ export default {
         accessKey: '',
         secretKey: '',
         bucket: ''
-      }
+      },
+      testing: false
     };
   },
   methods: {
@@ -79,6 +83,22 @@ export default {
       } catch (error) {
         console.error('保存存储配置失败:', error);
         this.$message.error('保存存储配置失败');
+      }
+    },
+    async testConfig() {
+      this.testing = true;
+      try {
+        const response = await testStorageConfig(this.config);
+        if (response.code === 200) {
+          this.$message.success('存储配置测试成功！');
+        } else {
+          this.$message.error(`${response.msg || '未知错误'}`);
+        }
+      } catch (error) {
+        console.error('存储配置测试失败:', error);
+        this.$message.error(`${error.message || '服务器错误'}`);
+      } finally {
+        this.testing = false;
       }
     },
     close() {
@@ -162,6 +182,11 @@ export default {
 }
 
 .form-actions button:first-child {
+  background: #ff9800;
+  color: white;
+}
+
+.form-actions button:nth-child(2) {
   background: #1976d2;
   color: white;
 }
@@ -170,5 +195,10 @@ export default {
   background: #f0f7ff;
   color: #1976d2;
   border: 1px solid #d0e4fc;
+}
+
+.form-actions button:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
 }
 </style>

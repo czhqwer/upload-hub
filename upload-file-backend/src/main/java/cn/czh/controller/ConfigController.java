@@ -26,4 +26,9 @@ public class ConfigController {
         return Result.success();
     }
 
+    @PostMapping("/test")
+    public Result<?> testConfig(@Valid @RequestBody StorageConfig config) {
+        storageConfigService.testStorageConfig(config);
+        return Result.success();
+    }
 }
