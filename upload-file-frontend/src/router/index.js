@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import FileUpload from '@/views/FileUpload.vue';
+// import FileUpload from '@/views/FileUpload.vue';
+import MainPage from '@/views/MainPage.vue';
 
 Vue.use(VueRouter)
 
@@ -8,7 +9,7 @@ const routes = [
   {
     path: '/',
     name: 'home',
-    component: FileUpload
+    component: MainPage
   }
 ]
 
