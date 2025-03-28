@@ -23,12 +23,12 @@ import com.aliyun.oss.model.*;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,7 +56,7 @@ public class OssStorageService implements IStorageService {
     /** 预签名 URL 过期时间：10 分钟 */
     private static final long PRE_SIGN_URL_EXPIRE = 10 * 60 * 1000;
 
-    @PostConstruct
+    @EventListener(ApplicationReadyEvent.class)
     public void init() {
         this.refreshConfig();
     }
@@ -121,7 +121,7 @@ public class OssStorageService implements IStorageService {
             uploadFile.setChunkNum(1);
             uploadFile.setChunkSize(file.getSize());
             uploadFile.setFileIdentifier(md5);
-            uploadFile.setCreateTime(new Date());
+            uploadFile.setCreateTime(DateUtil.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
             uploadFile.setStorageType(StorageConfig.OSS);
             uploadFileMapper.insert(uploadFile);
 
@@ -196,7 +196,7 @@ public class OssStorageService implements IStorageService {
                 .setObjectKey(objectKey)
                 .setIsFinish(0)
                 .setStorageType(StorageConfig.OSS)
-                .setCreateTime(new Date())
+                .setCreateTime(DateUtil.format(new Date(), "yyyy-MM-dd HH:mm:ss"))
                 .setContentType(param.getContentType());
         uploadFileMapper.insert(task);
 

@@ -72,6 +72,6 @@ public class UploadFile implements Serializable {
     /**
      * 创建时间
      */
-    private Date createTime;
+    private String createTime;
 
 }

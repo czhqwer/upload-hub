@@ -21,12 +21,12 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.FileInputStream;
@@ -50,7 +50,7 @@ public class LocalStorageService implements IStorageService {
 
     private StorageConfig storageConfig;
 
-    @PostConstruct
+    @EventListener(ApplicationReadyEvent.class)
     public void init() {
         this.refreshConfig();
     }
@@ -110,7 +110,7 @@ public class LocalStorageService implements IStorageService {
             uploadFile.setChunkSize(file.getSize());
             uploadFile.setFileIdentifier(md5);
             uploadFile.setStorageType(StorageConfig.LOCAL);
-            uploadFile.setCreateTime(new Date());
+            uploadFile.setCreateTime(DateUtil.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
             uploadFileMapper.insert(uploadFile);
 
             FileRecordDTO fileRecord = new FileRecordDTO();
@@ -160,7 +160,7 @@ public class LocalStorageService implements IStorageService {
                 .setObjectKey(objectKey)
                 .setIsFinish(0)
                 .setStorageType(StorageConfig.LOCAL)
-                .setCreateTime(new Date())
+                .setCreateTime(DateUtil.format(new Date(), "yyyy-MM-dd HH:mm:ss"))
                 .setContentType(param.getContentType());
         uploadFileMapper.insert(uploadFile);
 

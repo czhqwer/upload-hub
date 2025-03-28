@@ -36,7 +36,7 @@ CREATE TABLE `storage_config`  (
 -- ----------------------------
 -- Records of storage_config
 -- ----------------------------
-INSERT INTO `storage_config` VALUES (1, 'local', 'http://localhost:10086', '', '', 'E:\\develop\\Java\\xxxxxx\\upload-file-backend\\data');
+INSERT INTO `storage_config` VALUES (1, 'local', 'http://localhost:10086', '', '', 'E:\\data');
 INSERT INTO `storage_config` VALUES (2, 'minio', 'http://localhost:9000', 'minio', 'minio123', 'upload-file');
 INSERT INTO `storage_config` VALUES (3, 'oss', 'https://oss-cn-guangzhou.aliyuncs.com', 'ossAccessKeyID', 'ossAccessKeySecret', 'yourBucket');
 
@@ -57,7 +57,7 @@ CREATE TABLE `upload_file`  (
   `content_type` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '文件类型',
   `access_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '访问地址',
   `download_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '下载地址',
-  `create_time` datetime NULL DEFAULT NULL COMMENT '创建时间',
+  `create_time` varchar(255) DEFAULT NULL COMMENT '创建时间',
   `storage_type` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '上传类型',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uq_file_identifier`(`file_identifier` ASC) USING BTREE,

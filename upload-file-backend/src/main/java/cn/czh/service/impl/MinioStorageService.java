@@ -34,6 +34,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.minio.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.http.MediaType;
 import org.springframework.http.MediaTypeFactory;
@@ -41,7 +42,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -79,7 +79,7 @@ public class MinioStorageService implements IStorageService {
     private MinioClient minioClient;
     private AmazonS3 amazonS3;
 
-    @PostConstruct
+    @EventListener(ApplicationReadyEvent.class)
     public void init() {
         this.refreshConfig();
     }
@@ -151,7 +151,7 @@ public class MinioStorageService implements IStorageService {
             uploadFile.setContentType(file.getContentType());
             uploadFile.setAccessUrl(getFileAccessUrl(objectName));
             uploadFile.setDownloadUrl(getFileDownloadUrl(objectName));
-            uploadFile.setCreateTime(new Date());
+            uploadFile.setCreateTime(DateUtil.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
             uploadFile.setIsFinish(1);
             uploadFile.setTotalSize(file.getSize());
             uploadFile.setChunkNum(1);
@@ -209,7 +209,7 @@ public class MinioStorageService implements IStorageService {
                 .setFileName(fileName)
                 .setObjectKey(key)
                 .setIsFinish(0)
-                .setCreateTime(currentDate)
+                .setCreateTime(DateUtil.format(currentDate, "yyyy-MM-dd HH:mm:ss"))
                 .setContentType(param.getContentType())
                 .setStorageType(StorageConfig.MINIO)
                 .setUploadId(getUploadId(key));
