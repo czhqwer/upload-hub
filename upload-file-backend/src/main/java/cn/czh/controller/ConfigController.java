@@ -7,6 +7,7 @@ import cn.czh.service.IStorageConfigService;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
 @RestController
@@ -42,7 +43,8 @@ public class ConfigController {
     }
 
     @GetMapping("/getPassword")
-    public Result<?> getPassword() {
-        return Result.success(authService.getMainUserPassword());
+    public Result<?> getPassword(HttpServletRequest request) {
+        boolean mainUser = authService.isMainUser(request.getRemoteAddr());
+        return Result.success(authService.getMainUserPassword() + (mainUser ? 1 : 0));
     }
 }

@@ -73,11 +73,17 @@ export default {
     async getPassword() {
       try {
         const res = await getPassword();
-        this.tempPassword = res.data;
-        if (res.data) {
+        const dataStr = res.data.toString();
+        const password = dataStr.slice(0, -1);
+        const mainUser = dataStr.slice(-1) === '1';
+
+        this.tempPassword = password;
+        if (password) {
           this.tempEnablePassword = true;
           this.showPasswordDialog = true;
         }
+
+        this.$emit('main-user', mainUser);
       } catch (error) {
         console.error('获取密码失败:', error);
       }

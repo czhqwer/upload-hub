@@ -10,14 +10,14 @@
           <div class="menu-icon">☰</div>
           <div v-show="showMenu" class="dropdown-menu">
             <div class="menu-item" @click="openSettings">上传设置</div>
-            <div class="menu-item" @click="openStorageConfig">存储配置</div>
-            <div class="menu-item" @click="openPasswordConfig">密码设置</div>
+            <div class="menu-item" v-if="isAdmin" @click="openStorageConfig">存储配置</div>
+            <div class="menu-item" v-if="isAdmin" @click="openPasswordConfig">密码设置</div>
             <div class="menu-item" @click="openAbout">关于</div>
           </div>
         </div>
       </div>
       <div class="tab-bar">
-        <div v-for="tab in tabs" :key="tab.value" :class="['tab', { 'active': activeTab === tab.value }]"
+        <div v-for="tab in filteredTabs" :key="tab.value" :class="['tab', { 'active': activeTab === tab.value }]"
           @click="switchTab(tab.value)">
           {{ tab.label }}
           <div class="tab-underline"></div>
@@ -41,7 +41,7 @@
         @save="saveSettings" @close="closeSettings" />
       <storage-config-modal :show="showStorageConfig" :storage-options="storageOptions" @close="closeStorageConfig" />
       <about-modal :show="showAbout" @close="closeAbout" />
-      <password-config :show="showPasswordConfig" @close="closePasswordConfig" />
+      <password-config :show="showPasswordConfig" @close="closePasswordConfig" @main-user="handleMainUser" />
     </div>
   </div>
 </template>
@@ -62,15 +62,6 @@ export default {
     return {
       fileList: [],
       activeTab: 'local',
-      tabs: [
-        { label: 'Local', value: 'local' },
-        { label: 'MinIO', value: 'minio' },
-        { label: 'OSS', value: 'oss' },
-        { label: 'OBS', value: 'obs' },
-        { label: 'QiNiu', value: 'qiniu' },
-        { label: '已上传文件', value: 'gallery' },
-        { label: '共享文件', value: 'shared' },
-      ],
       showMenu: false,
       showSettings: false,
       showStorageConfig: false,
@@ -82,10 +73,22 @@ export default {
         { label: 'Local', value: 'local' },
         { label: 'MinIO', value: 'minio' },
         { label: 'OSS', value: 'oss' }
-      ]
+      ],
+      isAdmin: false,
     };
   },
   computed: {
+    filteredTabs() {
+    return [
+      { label: 'Local', value: 'local' },
+      { label: 'MinIO', value: 'minio' },
+      { label: 'OSS', value: 'oss' },
+      { label: 'OBS', value: 'obs' },
+      { label: 'QiNiu', value: 'qiniu' },
+      { label: '共享文件', value: 'shared' },
+      ...(this.isAdmin ? [{ label: '已上传文件', value: 'gallery' }] : []),
+    ];
+  },
     isWipTab() {
       return this.activeTab === 'obs' || this.activeTab === 'qiniu';
     }
@@ -133,6 +136,9 @@ export default {
     },
     closePasswordConfig() {
       this.showPasswordConfig = false;
+    },
+    handleMainUser(isMainUser) {
+      this.isAdmin = isMainUser;
     }
   }
 };
