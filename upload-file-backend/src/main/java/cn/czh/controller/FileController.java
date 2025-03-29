@@ -102,8 +102,17 @@ public class FileController {
         return Result.success(fileService.pageFiles(page, pageSize, storageType, fileName));
     }
 
-    @PostMapping("/sharedFile")
-    public Result<?> listSharedFiles(@RequestParam String fileIdentifier) {
+    @PostMapping("/deleteFile")
+    public Result<?> deleteFile(HttpServletRequest request, @RequestParam String fileIdentifier) {
+        if (!authService.isMainUser(request.getRemoteAddr())) {
+            return Result.error("权限不足");
+        }
+        fileService.deleteFile(fileIdentifier);
+        return Result.success();
+    }
+
+    @PostMapping("/addSharedFile")
+    public Result<?> addSharedFile(@RequestParam String fileIdentifier) {
         fileService.addSharedFile(fileIdentifier);
         return Result.success();
     }

@@ -15,4 +15,5 @@ public interface IFileService {
 
     void removeSharedFile(String fileIdentifier);
 
+    void deleteFile(String fileIdentifier);
 }

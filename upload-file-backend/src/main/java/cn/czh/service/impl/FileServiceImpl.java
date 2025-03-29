@@ -1,5 +1,6 @@
 package cn.czh.service.impl;
 
+import cn.czh.base.BusinessException;
 import cn.czh.entity.SharedFile;
 import cn.czh.entity.UploadFile;
 import cn.czh.mapper.ShareFileMapper;
@@ -13,9 +14,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,18 +34,29 @@ public class FileServiceImpl implements IFileService {
     public List<UploadFile> listSharedFiles() {
 
         List<SharedFile> sharedFiles = shareFileMapper.selectList(null);
-        Set<String> files = sharedFiles.stream()
+        List<String> files = sharedFiles.stream()
                 .map(SharedFile::getFileIdentifier)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
 
         List<UploadFile> uploadFiles = uploadFileMapper.selectList(null);
-        if (uploadFiles != null) {
-            return uploadFiles.stream()
-                    .filter(uploadFile -> files.contains(uploadFile.getFileIdentifier()))
-                    .collect(Collectors.toList());
+        if (uploadFiles == null) {
+            return Collections.emptyList();
         }
 
-        return Collections.emptyList();
+
+        Map<String, UploadFile> uploadFileMap = uploadFiles.stream()
+                .collect(Collectors.toMap(
+                        UploadFile::getFileIdentifier,
+                        uploadFile -> uploadFile,
+                        (oldValue, newValue) -> oldValue,
+                        LinkedHashMap::new
+                ));
+
+
+        return files.stream()
+                .filter(uploadFileMap::containsKey)
+                .map(uploadFileMap::get)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -66,5 +76,14 @@ public class FileServiceImpl implements IFileService {
     @Override
     public void removeSharedFile(String fileIdentifier) {
         shareFileMapper.delete(Wrappers.lambdaQuery(SharedFile.class).eq(SharedFile::getFileIdentifier, fileIdentifier));
+    }
+
+    @Override
+    public void deleteFile(String fileIdentifier) {
+        SharedFile sharedFile = shareFileMapper.selectOne(Wrappers.lambdaQuery(SharedFile.class).eq(SharedFile::getFileIdentifier, fileIdentifier));
+        if (sharedFile != null) {
+            throw new BusinessException("文件正在分享中，无法删除");
+        }
+        uploadFileMapper.delete(Wrappers.lambdaQuery(UploadFile.class).eq(UploadFile::getFileIdentifier, fileIdentifier));
     }
 }

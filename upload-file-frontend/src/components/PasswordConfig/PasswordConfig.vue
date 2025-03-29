@@ -35,7 +35,6 @@
         width="30%"
         :close-on-click-modal="false"
         :show-close="false"
-        :before-close="handleDialogClose"
         custom-class="password-dialog"
       >
         <el-input

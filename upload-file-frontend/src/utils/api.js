@@ -230,6 +230,28 @@ const unShareFile = (fileIdentifier) => {
 }
 
 /**
+ * 添加共享文件
+ * @param {string} fileIdentifier 
+ * @returns 
+ */
+const addSharedFile = (fileIdentifier) => {
+    const formData = new FormData();
+    formData.append('fileIdentifier', fileIdentifier);
+    return http.post("/file/addSharedFile", formData);
+}
+
+/**
+ * 删除文件
+ * @param {string} fileIdentifier 
+ * @returns 
+ */
+const deleteFile = (fileIdentifier) => {
+    const formData = new FormData();
+    formData.append('fileIdentifier', fileIdentifier);
+    return http.post("/file/deleteFile", formData);
+}
+
+/**
  * 获取密码
  * @returns 
  */
@@ -265,5 +287,7 @@ export {
     unShareFile,
     getPassword,
     setPassword,
+    addSharedFile,
+    deleteFile,
     httpExtra
 };

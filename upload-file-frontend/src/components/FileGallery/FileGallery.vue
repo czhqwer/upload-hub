@@ -1,5 +1,6 @@
+<!-- FileGallery.vue -->
 <template>
-  <div class="gallery-container" @scroll="handleScroll">
+  <div class="gallery-container" @scroll="handleScroll" @contextmenu.prevent>
     <div class="gallery-header">
       <label for="storage-select">存储类型:</label>
       <select id="storage-select" v-model="selectedStorageType" @change="fetchFiles(true)">
@@ -18,7 +19,8 @@
       加载中...
     </div>
     <div v-else class="file-grid">
-      <div v-for="file in filePage" :key="file.id" class="file-card">
+      <div v-for="file in filePage" :key="file.id" class="file-card"
+        @contextmenu.prevent="showContextMenu($event, file)">
         <div class="preview-wrapper">
           <img v-if="isImage(file)" :src="file.accessUrl" :alt="file.fileName" class="preview-image"
             @click="openImagePreview(file)" loading="lazy" />
@@ -29,7 +31,7 @@
             <div class="pdf-icon">📜</div>
           </div>
           <div v-else class="file-icon">📄</div>
-          <div class="copy-button" @click.stop="copyUrl(file.accessUrl)" title="复制文件URL">📋</div>
+          <!-- <div class="copy-button" @click.stop="copyUrl(file.accessUrl)" title="复制文件URL">📋</div> -->
         </div>
         <div class="file-meta">
           <div class="filename">{{ file.fileName }}</div>
@@ -39,6 +41,10 @@
           </div>
         </div>
       </div>
+
+      <context-menu v-if="contextMenu.file" :file="contextMenu.file" :top="contextMenu.top" :left="contextMenu.left"
+        @copy-link="copyUrl" @share-file="shareFile" @delete-file="deleteFile" />
+
     </div>
     <div v-if="loading && filePage.length > 0" class="loading-more">加载更多...</div>
 
@@ -69,10 +75,14 @@
 </template>
 
 <script>
-import { pageFiles } from '@/utils/api';
+import ContextMenu from '../ContextMenu/ContextMenu.vue';
+import { pageFiles, addSharedFile, deleteFile } from '@/utils/api';
 
 export default {
   name: 'FileGallery',
+  components: {
+    ContextMenu,
+  },
   props: {
     storageOptions: {
       type: Array,
@@ -98,7 +108,12 @@ export default {
       selectedVideoUrl: '',
       showPdfPreview: false,
       selectedPdfUrl: '',
-      loadingPdf: false
+      loadingPdf: false,
+      contextMenu: {
+        file: null,
+        top: 0,
+        left: 0
+      }
     };
   },
   methods: {
@@ -190,10 +205,45 @@ export default {
         console.error('复制URL失败:', error);
         this.$message.error('复制URL失败');
       }
+    },
+    showContextMenu(event, file) {
+      this.contextMenu.file = file;
+      this.contextMenu.top = event.clientY;
+      this.contextMenu.left = event.clientX;
+    },
+    async shareFile(file) {
+      const res = await addSharedFile(file.fileIdentifier);
+      if (res.code === 200) {
+        this.$message.success('分享成功');
+      }
+    },
+    deleteFile(file) {
+      this.$confirm('确定要删除此文件吗?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(async () => {
+        const res = await deleteFile(file.fileIdentifier);
+        if (res.code === 200) {
+          this.fetchFiles(true);
+          this.$message.success('删除成功');
+        } else {
+          this.$message.error(res.msg);
+        }
+      }).catch(() => {
+        this.$message.info('已取消删除');
+      });
+    },
+    hideContextMenu() {
+      this.contextMenu.file = null;
     }
   },
   mounted() {
+    document.addEventListener('click', this.hideContextMenu);
     this.fetchFiles(true);
+  },
+  beforeDestroy() {
+    document.removeEventListener('click', this.hideContextMenu);
   }
 };
 </script>
@@ -261,27 +311,6 @@ export default {
 .file-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 3px 8px rgba(25, 118, 210, 0.2);
-}
-
-.copy-button {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  font-size: 14px;
-  opacity: 0;
-  transition: opacity 0.2s;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.file-card:hover .copy-button {
-  opacity: 1;
 }
 
 .preview-wrapper {
