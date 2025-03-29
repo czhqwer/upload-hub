@@ -42,7 +42,7 @@ public class AuthServiceImpl implements IAuthService {
             user.setCreateTime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 
         }
-        user.setPassword(password != null && password.trim().isEmpty() ? null : password);
+        user.setPassword(password != null && password.trim().isEmpty() ? "" : password);
         if (user.getId() == null) {
             userConfigMapper.insert(user);
         } else {

@@ -35,9 +35,14 @@ public class ConfigController {
         return Result.success();
     }
 
-    @PostMapping("/set-password")
-    public Result<?> setPassword(@RequestBody String password) {
+    @PostMapping("/setPassword")
+    public Result<?> setPassword(@RequestParam String password) {
         authService.setMainUserPassword(password);
         return Result.success();
+    }
+
+    @GetMapping("/getPassword")
+    public Result<?> getPassword() {
+        return Result.success(authService.getMainUserPassword());
     }
 }

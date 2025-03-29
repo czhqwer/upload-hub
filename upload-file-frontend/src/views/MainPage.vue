@@ -11,6 +11,7 @@
           <div v-show="showMenu" class="dropdown-menu">
             <div class="menu-item" @click="openSettings">上传设置</div>
             <div class="menu-item" @click="openStorageConfig">存储配置</div>
+            <div class="menu-item" @click="openPasswordConfig">密码设置</div>
             <div class="menu-item" @click="openAbout">关于</div>
           </div>
         </div>
@@ -40,6 +41,7 @@
         @save="saveSettings" @close="closeSettings" />
       <storage-config-modal :show="showStorageConfig" :storage-options="storageOptions" @close="closeStorageConfig" />
       <about-modal :show="showAbout" @close="closeAbout" />
+      <password-config :show="showPasswordConfig" @close="closePasswordConfig" />
     </div>
   </div>
 </template>
@@ -51,10 +53,11 @@ import SettingsModal from '@/components/SettingsModal/SettingsModal.vue';
 import StorageConfigModal from '@/components/StorageConfigModal/StorageConfigModal.vue';
 import AboutModal from '@/components/AboutModal/AboutModal.vue';
 import ShareFile from '@/components/ShareFile/ShareFile.vue';
+import PasswordConfig from '@/components/PasswordConfig/PasswordConfig.vue';
 
 export default {
   name: 'MainPage',
-  components: { UploadFile, FileGallery, SettingsModal, StorageConfigModal, AboutModal, ShareFile },
+  components: { UploadFile, FileGallery, SettingsModal, StorageConfigModal, AboutModal, ShareFile, PasswordConfig },
   data() {
     return {
       fileList: [],
@@ -72,6 +75,7 @@ export default {
       showSettings: false,
       showStorageConfig: false,
       showAbout: false,
+      showPasswordConfig: false,
       allowedFormats: '.jpg,.png,.mp4',
       maxUploadSize: 100 * 1024 * 1024,
       storageOptions: [
@@ -122,6 +126,13 @@ export default {
     },
     closeAbout() {
       this.showAbout = false;
+    },
+    openPasswordConfig() {
+      this.showPasswordConfig = true;
+      this.showMenu = false;
+    },
+    closePasswordConfig() {
+      this.showPasswordConfig = false;
     }
   }
 };

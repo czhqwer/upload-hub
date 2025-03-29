@@ -229,6 +229,24 @@ const unShareFile = (fileIdentifier) => {
     return http.post("/file/unShareFile", formData);
 }
 
+/**
+ * 获取密码
+ * @returns 
+ */
+const getPassword = () => {
+    return http.get("/config/getPassword");
+}
+
+/**
+ * 设置密码
+ * @param {string} password 
+ * @returns 
+ */
+const setPassword = (password) => {
+    const formData = new FormData();
+    formData.append('password', password);
+    return http.post("/config/setPassword", formData);
+}
 export {
     getUploadProgress,
     createMultipartUpload,
@@ -245,5 +263,7 @@ export {
     getShareStatus,
     shareAddress,
     unShareFile,
+    getPassword,
+    setPassword,
     httpExtra
 };
