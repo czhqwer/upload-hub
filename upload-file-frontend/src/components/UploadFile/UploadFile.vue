@@ -438,7 +438,6 @@ export default {
           }
         } else {
           file.status = 'failed'
-          this.$message.error(msg)
         }
       } catch (e) {
         console.log('getTaskInfo', e)

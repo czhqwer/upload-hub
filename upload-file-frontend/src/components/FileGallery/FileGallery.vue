@@ -138,7 +138,6 @@ export default {
         if (this.hasMore) this.currentPage++;
       } catch (error) {
         console.error('获取文件列表失败:', error);
-        this.$message.error('加载文件列表失败');
       } finally {
         this.loading = false;
       }
@@ -227,8 +226,6 @@ export default {
         if (res.code === 200) {
           this.fetchFiles(true);
           this.$message.success('删除成功');
-        } else {
-          this.$message.error(res.msg);
         }
       }).catch(() => {
         this.$message.info('已取消删除');

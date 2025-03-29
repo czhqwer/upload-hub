@@ -1,7 +1,8 @@
 import axios from 'axios';
+import { Message } from 'element-ui';
 import axiosExtra from 'axios-extra';
 
-const baseUrl = 'http://localhost:10086';
+const baseUrl = `http://${window.location.hostname}:10086`;
 
 // 基础 Axios 实例
 const http = axios.create({
@@ -19,9 +20,26 @@ http.interceptors.request.use(config => {
 });
 
 // 配置拦截器，返回 response.data
-http.interceptors.response.use(response => {
-    return response.data;
-});
+http.interceptors.response.use(
+    response => {
+        try {
+            if (response.data && response.data.code !== 200) {
+                console.log(response.data);
+                Message.error(response.data.msg || '请求失败');
+            }
+            return response.data;
+        } catch (error) {
+            console.error('拦截器错误:', error);
+            Message.error('服务器响应解析失败');
+            return Promise.reject(error);
+        }
+    },
+    error => {
+        console.error('请求错误:', error);
+        Message.error(error.response?.data?.msg || '网络错误，请稍后重试');
+        return Promise.reject(error);
+    }
+);
 
 // 配置 axios-extra 实例，用于控制并发和重试
 const httpExtra = axiosExtra.create({

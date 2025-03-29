@@ -91,8 +91,6 @@ export default {
         const response = await testStorageConfig(this.config);
         if (response.code === 200) {
           this.$message.success('存储配置测试成功！');
-        } else {
-          this.$message.error(`${response.msg || '未知错误'}`);
         }
       } catch (error) {
         console.error('存储配置测试失败:', error);

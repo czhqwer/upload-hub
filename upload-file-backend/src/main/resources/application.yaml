@@ -22,4 +22,3 @@ mysql:
 logging:
   level:
     cn.czh.mapper: debug
-    org.springframework.jdbc: debug

@@ -107,8 +107,6 @@ export default {
       const res = await getSharedFiles();
       if (res.code === 200) {
         this.fileList = res.data;
-      } else {
-        this.$message.error('获取文件列表失败');
       }
     },
 
