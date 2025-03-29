@@ -68,7 +68,7 @@
 </template>
 
 <script>
-import { getSharedFiles, enableShare, getShareStatus, shareAddress, unShareFile } from '@/utils/api';
+import { getSharedFiles, enableShare, getShareStatus, shareAddress, unShareFile, subscribeSharedFiles, subscribeSystemEvent } from '@/utils/api';
 
 export default {
   name: 'ShareFile',
@@ -79,12 +79,15 @@ export default {
       protocol: 'IPv4',
       fileList: [],
       enableShare: false,
+      isAdmin: false,
     };
   },
   mounted() {
     this.fetchFiles();
     this.getShareStatus();
     this.getShareAddress();
+    this.subscribeSharedFiles();
+    this.subscribeSystemEvent();
   },
   methods: {
     async getShareAddress() {
@@ -108,6 +111,20 @@ export default {
       if (res.code === 200) {
         this.fileList = res.data;
       }
+    },
+    subscribeSharedFiles() {
+      subscribeSharedFiles(() => {
+        this.fetchFiles();
+      });
+    },
+    subscribeSystemEvent() {
+      subscribeSystemEvent((event) => {
+        if (event.type === 'enableShare') {
+          this.fileList = [];
+          this.enableShare = event.data.enable;
+          this.fetchFiles();
+        }
+      });
     },
 
     async downloadFile(file) {

@@ -6,6 +6,10 @@ import cn.czh.entity.UploadFile;
 import cn.czh.mapper.ShareFileMapper;
 import cn.czh.mapper.UploadFileMapper;
 import cn.czh.service.IFileService;
+import cn.czh.service.ISseService;
+import cn.hutool.json.JSON;
+import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -24,6 +28,8 @@ public class FileServiceImpl implements IFileService {
     private UploadFileMapper uploadFileMapper;
     @Resource
     private ShareFileMapper shareFileMapper;
+    @Resource
+    private ISseService sseService;
 
     @Override
     public IPage<UploadFile> pageFiles(Integer page, Integer pageSize, String storageType, String fileName) {
@@ -70,12 +76,14 @@ public class FileServiceImpl implements IFileService {
             sharedFile.setFileIdentifier(identifier);
             sharedFile.setCreateTime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
             shareFileMapper.insert(sharedFile);
+            sseService.notifySharedFileUpdate("add");
         }
     }
 
     @Override
     public void removeSharedFile(String fileIdentifier) {
         shareFileMapper.delete(Wrappers.lambdaQuery(SharedFile.class).eq(SharedFile::getFileIdentifier, fileIdentifier));
+        sseService.notifySharedFileUpdate("remove");
     }
 
     @Override

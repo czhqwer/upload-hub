@@ -1,20 +1,26 @@
 package cn.czh.service.impl;
 
+import cn.czh.dto.NotifyMessage;
 import cn.czh.entity.UserConfig;
 import cn.czh.mapper.UserConfigMapper;
 import cn.czh.service.IAuthService;
+import cn.czh.service.ISseService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class AuthServiceImpl implements IAuthService {
 
     @Resource
     private UserConfigMapper userConfigMapper;
+    @Resource
+    private ISseService sseService;
 
     @Override
     public String getMainUserPassword() {
@@ -48,6 +54,11 @@ public class AuthServiceImpl implements IAuthService {
         } else {
             userConfigMapper.updateById(user);
         }
+        Map<String, Object> data = new HashMap<>();
+        data.put("password", password);
+        NotifyMessage message = new NotifyMessage("setPassword", data);
+
+        sseService.notifySystemEvent(message);
     }
 
     @Override

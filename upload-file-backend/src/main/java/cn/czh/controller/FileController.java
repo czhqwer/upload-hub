@@ -1,11 +1,14 @@
 package cn.czh.controller;
 
 import cn.czh.base.Result;
+import cn.czh.dto.NotifyMessage;
 import cn.czh.entity.StorageConfig;
 import cn.czh.service.IAuthService;
 import cn.czh.service.IFileService;
+import cn.czh.service.ISseService;
 import cn.czh.service.IStorageConfigService;
 import cn.czh.utils.FileTypeUtil;
+import cn.hutool.core.map.MapUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
@@ -24,6 +27,7 @@ import java.net.NetworkInterface;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Enumeration;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -36,6 +40,8 @@ public class FileController {
     private IFileService fileService;
     @Resource
     private IAuthService authService;
+    @Resource
+    private ISseService sseService;
 
     @Value("${server.port}")
     private String serverPort;
@@ -147,6 +153,8 @@ public class FileController {
             return Result.error("非主用户不能修改分享状态");
         }
         enableShare = enable;
+        Map<String, Object> data = MapUtil.of("enable", enable);
+        sseService.notifySystemEvent(new NotifyMessage("enableShare", data));
         return Result.success();
     }
 
