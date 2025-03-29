@@ -11,6 +11,7 @@ import cn.czh.dto.req.CreateMultipartUpload;
 import cn.czh.entity.StorageConfig;
 import cn.czh.entity.UploadFile;
 import cn.czh.mapper.UploadFileMapper;
+import cn.czh.service.IFileService;
 import cn.czh.service.IStorageConfigService;
 import cn.czh.service.IStorageService;
 import cn.czh.utils.ImgUtils;
@@ -61,6 +62,8 @@ public class MinioStorageService implements IStorageService {
     private UploadFileMapper uploadFileMapper;
     @Resource
     private IStorageConfigService storageConfigService;
+    @Resource
+    private IFileService fileService;
 
     /**
      * 预签名url过期时间: 10分钟
@@ -122,7 +125,7 @@ public class MinioStorageService implements IStorageService {
 
     @Transactional
     @Override
-    public FileRecordDTO uploadFile(MultipartFile file, String md5, String objectName) {
+    public FileRecordDTO uploadFile(MultipartFile file, String md5, String objectName, Boolean admin) {
 
         UploadFile uploadFile = getByIdentifier(md5);
         if (ObjectUtil.isNotNull(uploadFile)) {
@@ -164,6 +167,10 @@ public class MinioStorageService implements IStorageService {
             BeanUtils.copyProperties(uploadFile, fileRecord);
             fileRecord.setFileId(uploadFile.getId());
             fileRecord.setOriginalName(filename);
+
+            if (!admin) {
+                fileService.addSharedFile(md5);
+            }
             return fileRecord;
         } catch (Exception e) {
             throw new BusinessException("文件上上传失败", e);
@@ -219,7 +226,7 @@ public class MinioStorageService implements IStorageService {
 
     @Transactional
     @Override
-    public UploadFile merge(String identifier) {
+    public UploadFile merge(String identifier, Boolean admin) {
         UploadFile uploadFile = getByIdentifier(identifier);
         if (uploadFile == null) {
             throw new BusinessException("上传任务不存在");
@@ -244,6 +251,10 @@ public class MinioStorageService implements IStorageService {
         uploadFile.setDownloadUrl(getFileDownloadUrl(uploadFile.getObjectKey()));
         uploadFile.setIsFinish(1);
         uploadFileMapper.updateById(uploadFile);
+
+        if (!admin) {
+            fileService.addSharedFile(uploadFile.getFileIdentifier());
+        }
         return uploadFile;
     }
 

@@ -22,7 +22,7 @@
           <div class="tab-underline"></div>
         </div>
       </div>
-      <div v-if="activeTab !== 'gallery' && !isWipTab" class="upload-content">
+      <div v-if="activeTab !== 'gallery' && activeTab !== 'shared' && !isWipTab" class="upload-content">
         <upload-file :file-list.sync="fileList" :accept="allowedFormats" :max-size="maxUploadSize" width="100%"
           height="400px" :storage-type="activeTab" />
       </div>
@@ -34,6 +34,7 @@
           <p v-else-if="activeTab === 'qiniu'">七牛云功能正在被疯狂调教，马上就能和大家见面啦！</p>
         </div>
       </div>
+      <share-file v-else-if="activeTab === 'shared'" />
       <file-gallery v-else />
       <settings-modal :show="showSettings" :allowed-formats="allowedFormats" :max-upload-size="maxUploadSize"
         @save="saveSettings" @close="closeSettings" />
@@ -49,10 +50,11 @@ import FileGallery from '@/components/FileGallery/FileGallery.vue';
 import SettingsModal from '@/components/SettingsModal/SettingsModal.vue';
 import StorageConfigModal from '@/components/StorageConfigModal/StorageConfigModal.vue';
 import AboutModal from '@/components/AboutModal/AboutModal.vue';
+import ShareFile from '@/components/ShareFile/ShareFile.vue';
 
 export default {
   name: 'MainPage',
-  components: { UploadFile, FileGallery, SettingsModal, StorageConfigModal, AboutModal },
+  components: { UploadFile, FileGallery, SettingsModal, StorageConfigModal, AboutModal, ShareFile },
   data() {
     return {
       fileList: [],
@@ -63,7 +65,8 @@ export default {
         { label: 'OSS', value: 'oss' },
         { label: 'OBS', value: 'obs' },
         { label: 'QiNiu', value: 'qiniu' },
-        { label: '已上传文件', value: 'gallery' }
+        { label: '已上传文件', value: 'gallery' },
+        { label: '共享文件', value: 'shared' },
       ],
       showMenu: false,
       showSettings: false,

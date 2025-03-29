@@ -180,6 +180,55 @@ const testStorageConfig = ({ type, endpoint, accessKey, secretKey, bucket }) => 
     });
 }
 
+/**
+ * 获取共享文件列表
+ * @param {Object} params 参数对象
+ * @param {string} params.password 密码
+ * @returns 
+ */
+const getSharedFiles = () => {
+    return http.get('/file/sharedFiles');
+};
+
+/**
+ * 启用或禁用共享
+ * @param {Object} params 参数对象
+ * @param {boolean} params.enable 是否启用
+ * @returns 
+ */
+const enableShare = ({ enable }) => {
+    const formData = new FormData();
+    formData.append('enable', enable);
+    return http.post("/file/enableShare", formData);
+};
+
+/**
+ * 获取分享状态
+ * @returns
+ */
+const getShareStatus = () => {
+    return http.get("/file/getShareStatus");
+}
+
+/**
+ * 获取分享地址
+ * @returns
+ */
+const shareAddress = () => {
+    return http.get("/file/shareAddress");
+}
+
+/**
+ * 移除共享文件
+ * @param {string} fileIdentifier 
+ * @returns 
+ */
+const unShareFile = (fileIdentifier) => {
+    const formData = new FormData();
+    formData.append('fileIdentifier', fileIdentifier);
+    return http.post("/file/unShareFile", formData);
+}
+
 export {
     getUploadProgress,
     createMultipartUpload,
@@ -191,5 +240,10 @@ export {
     getStorageConfig,
     setStorageConfig,
     testStorageConfig,
+    getSharedFiles,
+    enableShare,
+    getShareStatus,
+    shareAddress,
+    unShareFile,
     httpExtra
 };

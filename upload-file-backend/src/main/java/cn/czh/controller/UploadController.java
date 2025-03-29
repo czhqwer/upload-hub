@@ -4,6 +4,7 @@ import cn.czh.base.Result;
 import cn.czh.dto.req.CreateMultipartUpload;
 import cn.czh.entity.StorageConfig;
 import cn.czh.entity.UploadFile;
+import cn.czh.service.IAuthService;
 import cn.czh.service.IStorageService;
 import cn.czh.service.StorageServiceFactory;
 import cn.czh.utils.FileTypeUtil;
@@ -27,6 +28,8 @@ public class UploadController {
 
     @Resource
     private StorageServiceFactory storageServiceFactory;
+    @Resource
+    private IAuthService authService;
 
     /**
      * 从请求中获取存储类型（示例：从请求头获取）
@@ -83,9 +86,10 @@ public class UploadController {
 
     @PostMapping("/merge")
     public Result<?> merge(HttpServletRequest request, String identifier) {
+        boolean mainUser = authService.isMainUser(request.getRemoteAddr());
         String storageType = getStorageTypeFromRequest(request);
         IStorageService storageService = storageServiceFactory.getStorageService(storageType);
-        return Result.success(storageService.merge(identifier));
+        return Result.success(storageService.merge(identifier, mainUser));
     }
 
     @PostMapping
@@ -101,6 +105,8 @@ public class UploadController {
             }
         }
 
+        boolean mainUser = authService.isMainUser(request.getRemoteAddr());
+
         String md5 = SecureUtil.md5(file.getInputStream());
         synchronized (md5.intern()) {
             String dateFormat = DateUtil.format(new Date(), DatePattern.PURE_DATE_PATTERN);
@@ -109,7 +115,7 @@ public class UploadController {
                     dateFormat + "/" + md5 + "." + FileTypeUtil.getFileSuffix(filename);
             String storageType = getStorageTypeFromRequest(request);
             IStorageService storageService = storageServiceFactory.getStorageService(storageType);
-            return Result.success(storageService.uploadFile(file, md5, objectName));
+            return Result.success(storageService.uploadFile(file, md5, objectName, mainUser));
         }
     }
 }

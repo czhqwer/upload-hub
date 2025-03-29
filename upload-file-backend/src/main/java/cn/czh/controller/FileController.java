@@ -2,25 +2,30 @@ package cn.czh.controller;
 
 import cn.czh.base.Result;
 import cn.czh.entity.StorageConfig;
+import cn.czh.service.IAuthService;
 import cn.czh.service.IFileService;
 import cn.czh.service.IStorageConfigService;
 import cn.czh.utils.FileTypeUtil;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Enumeration;
 
+@Slf4j
 @RestController
 @RequestMapping("/file")
 public class FileController {
@@ -29,6 +34,13 @@ public class FileController {
     private IStorageConfigService storageConfigService;
     @Resource
     private IFileService fileService;
+    @Resource
+    private IAuthService authService;
+
+    @Value("${server.port}")
+    private String serverPort;
+
+    private static boolean enableShare = false;
 
     @GetMapping("/preview/{storageType}/**")
     public ResponseEntity<?> previewFile(
@@ -76,7 +88,11 @@ public class FileController {
     }
 
     @GetMapping("/page")
-    public Result<?> pageFiles(Integer page, Integer pageSize, String storageType, String fileName) {
+    public Result<?> pageFiles(HttpServletRequest request, Integer page, Integer pageSize, String storageType, String fileName) {
+        if (!authService.isMainUser(request.getRemoteAddr())) {
+            return Result.error("权限不足");
+        }
+
         if (page == null) {
             page = 1;
         }
@@ -84,5 +100,84 @@ public class FileController {
             pageSize = 10;
         }
         return Result.success(fileService.pageFiles(page, pageSize, storageType, fileName));
+    }
+
+    @PostMapping("/sharedFile")
+    public Result<?> listSharedFiles(@RequestParam String fileIdentifier) {
+        fileService.addSharedFile(fileIdentifier);
+        return Result.success();
+    }
+
+    @PostMapping("/unShareFile")
+    public Result<?> unShareFile(HttpServletRequest request, @RequestParam String fileIdentifier) {
+        if (!authService.isMainUser(request.getRemoteAddr())) {
+            return Result.error("非主用户不能取消分享");
+        }
+        fileService.removeSharedFile(fileIdentifier);
+        return Result.success();
+    }
+
+    @GetMapping("/sharedFiles")
+    public Result<?> getSharedFiles(HttpServletRequest request, @RequestHeader("Authorization") String password) {
+        boolean isMainUser = authService.isMainUser(request.getRemoteAddr());
+        String mainUserPassword = authService.getMainUserPassword();
+
+        if (!isMainUser && !mainUserPassword.equals(password)) {
+            return Result.error("密码错误");
+        }
+        if (!isMainUser && !enableShare) {
+            return Result.error("分享功能未开启");
+        }
+
+        return Result.success(fileService.listSharedFiles());
+    }
+
+    @PostMapping("/enableShare")
+    public Result<?> enableShare(HttpServletRequest request, @RequestParam Boolean enable) {
+        if (!authService.isMainUser(request.getRemoteAddr())) {
+            return Result.error("非主用户不能修改分享状态");
+        }
+        enableShare = enable;
+        return Result.success();
+    }
+
+    @GetMapping("/getShareStatus")
+    public Result<?> getShareStatus() {
+        return Result.success(enableShare);
+    }
+
+    @GetMapping("/shareAddress")
+    public Result<?> getShareAddress() {
+        String ip;
+        try {
+            ip = getLocalIpAddress();
+        } catch (Exception e) {
+            log.error("获取本地IP地址失败：{}", e.getMessage(), e);
+            ip = "localhost";
+        }
+        return Result.success("http://" + ip + ":" + serverPort);
+    }
+
+    private String getLocalIpAddress() throws Exception {
+        Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+        while (interfaces.hasMoreElements()) {
+            NetworkInterface networkInterface = interfaces.nextElement();
+            // 跳过回环接口和未启用的接口
+            if (networkInterface.isLoopback() || !networkInterface.isUp()) {
+                continue;
+            }
+            Enumeration<InetAddress> addresses = networkInterface.getInetAddresses();
+            while (addresses.hasMoreElements()) {
+                InetAddress addr = addresses.nextElement();
+                if (addr instanceof Inet4Address && !addr.isLoopbackAddress()) {
+                    String ip = addr.getHostAddress();
+                    if (ip.startsWith("192.168.") || ip.startsWith("10.") ||
+                            (ip.startsWith("172.") && Integer.parseInt(ip.split("\\.")[1]) >= 16 && Integer.parseInt(ip.split("\\.")[1]) <= 31)) {
+                        return ip;
+                    }
+                }
+            }
+        }
+        return null;
     }
 }

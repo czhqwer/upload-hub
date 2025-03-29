@@ -11,6 +11,7 @@ import cn.czh.dto.req.CreateMultipartUpload;
 import cn.czh.entity.StorageConfig;
 import cn.czh.entity.UploadFile;
 import cn.czh.mapper.UploadFileMapper;
+import cn.czh.service.IFileService;
 import cn.czh.service.IStorageConfigService;
 import cn.czh.service.IStorageService;
 import cn.hutool.core.date.DatePattern;
@@ -49,6 +50,8 @@ public class OssStorageService implements IStorageService {
     private UploadFileMapper uploadFileMapper;
     @Resource
     private IStorageConfigService storageConfigService;
+    @Resource
+    private IFileService fileService;
 
     private StorageConfig storageConfig;
     private OSS ossClient;
@@ -83,7 +86,7 @@ public class OssStorageService implements IStorageService {
      */
     @Transactional
     @Override
-    public FileRecordDTO uploadFile(MultipartFile file, String md5, String objectName) {
+    public FileRecordDTO uploadFile(MultipartFile file, String md5, String objectName, Boolean admin) {
         UploadFile uploadFile = getByIdentifier(md5);
         if (uploadFile != null) {
             FileRecordDTO fileRecord = new FileRecordDTO();
@@ -129,6 +132,10 @@ public class OssStorageService implements IStorageService {
             BeanUtils.copyProperties(uploadFile, fileRecord);
             fileRecord.setFileId(uploadFile.getId());
             fileRecord.setOriginalName(file.getOriginalFilename());
+
+            if (!admin) {
+                fileService.addSharedFile(md5);
+            }
             return fileRecord;
         } catch (IOException e) {
             throw new BusinessException("文件上传失败", e);
@@ -211,7 +218,7 @@ public class OssStorageService implements IStorageService {
      */
     @Transactional
     @Override
-    public UploadFile merge(String identifier) {
+    public UploadFile merge(String identifier, Boolean admin) {
         UploadFile uploadFile = getByIdentifier(identifier);
         if (uploadFile == null) {
             throw new BusinessException("上传任务不存在");
@@ -243,6 +250,10 @@ public class OssStorageService implements IStorageService {
         uploadFile.setDownloadUrl(getFileDownloadUrl(uploadFile.getObjectKey()));
         uploadFile.setIsFinish(1);
         uploadFileMapper.updateById(uploadFile);
+
+        if (!admin) {
+            fileService.addSharedFile(identifier);
+        }
         return uploadFile;
     }
 

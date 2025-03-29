@@ -2,6 +2,7 @@ package cn.czh.controller;
 
 import cn.czh.base.Result;
 import cn.czh.entity.StorageConfig;
+import cn.czh.service.IAuthService;
 import cn.czh.service.IStorageConfigService;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,6 +15,8 @@ public class ConfigController {
 
     @Resource
     private IStorageConfigService storageConfigService;
+    @Resource
+    private IAuthService authService;
 
     @GetMapping
     public Result<?> getConfig(String type) {
@@ -29,6 +32,12 @@ public class ConfigController {
     @PostMapping("/test")
     public Result<?> testConfig(@Valid @RequestBody StorageConfig config) {
         storageConfigService.testStorageConfig(config);
+        return Result.success();
+    }
+
+    @PostMapping("/set-password")
+    public Result<?> setPassword(@RequestBody String password) {
+        authService.setMainUserPassword(password);
         return Result.success();
     }
 }

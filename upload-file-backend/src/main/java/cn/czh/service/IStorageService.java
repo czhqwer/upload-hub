@@ -14,7 +14,7 @@ public interface IStorageService {
     /**
      * 普通文件上传
      */
-    FileRecordDTO uploadFile(MultipartFile file, String md5, String objectName);
+    FileRecordDTO uploadFile(MultipartFile file, String md5, String objectName, Boolean admin);
 
     /**
      * 获取文件上传进度
@@ -29,7 +29,7 @@ public interface IStorageService {
     /**
      * 合并分片文件
      */
-    UploadFile merge(String identifier);
+    UploadFile merge(String identifier, Boolean admin);
 
     /**
      * 根据md5标识获取分片上传任务
