@@ -1,5 +1,6 @@
 package cn.czh.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
@@ -11,6 +12,7 @@ import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 
 import javax.sql.DataSource;
 
+@Slf4j
 @Configuration
 public class DataSourceConfig {
 
@@ -37,6 +39,7 @@ public class DataSourceConfig {
         boolean useMySQL = !mysqlUrl.isEmpty() && !mysqlUsername.isEmpty() && !mysqlPassword.isEmpty();
 
         if (useMySQL) {
+            log.info("Using MySQL database.");
             return DataSourceBuilder.create()
                     .url(mysqlUrl)
                     .username(mysqlUsername)
@@ -44,6 +47,7 @@ public class DataSourceConfig {
                     .driverClassName(mysqlDriverClassName)
                     .build();
         } else {
+            log.info("Using SQLite database.");
             // 默认使用 SQLite，无需 username 和 password
             return DataSourceBuilder.create()
                     .url(defaultUrl)

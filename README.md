@@ -67,10 +67,29 @@
 
 
 
-
 ## 快速开始
 
-### 前端
+### 先决条件
+
+在运行项目之前，请月报满足以下条件：
+
+- Java环境
+    - JDK8或更高版本已安装
+    - 环境变量`JAVA_HOME`已配置
+- Maven（可选）：
+    - 如果需要从源码构建，安装Maven3.6+
+- 数据库：
+    - SQLite：无需额外安装，默认使用文件数据库（upload-file.db）
+    - MySQL（可选）：需安装MySQL8.x，并创建数据库`upload-file`
+- 命令行工具：
+    - Windows 用户建议使用 PowerShell 或 CMD
+    - Linux/Mac 用户使用终端即可
+
+
+
+### 构建项目
+
+#### 前端
 
 1. 克隆项目到本地：
     ```bash
@@ -92,7 +111,7 @@
 4. 访问应用： 在浏览器中打开 http://localhost:8080。
 
 
-### 后端
+#### 后端
 
 
 1. 进入后端目录：
@@ -114,6 +133,68 @@
   ```
 
 4. 接口地址： 默认运行在 http://localhost:10086。
+
+
+
+### 运行项目
+
+#### 下载 JAR 文件
+
+[Download upload-file-backend-1.0-SNAPSHOT.jar](https://gitee.com/czh-dev/upload-hub/tree/main/dist/upload-file-backend-1.0-SNAPSHOT.jar)
+
+#### 默认模式（SQLite）
+
+无需额外配置，直接运行，默认使用 SQLite 数据库：
+
+```bash
+java -jar upload-file-backend-1.0-SNAPSHOT.jar
+```
+
+- 说明：
+    - SQLite 数据库文件`upload-file.db`将自动创建在当前目录
+    - 表结构和初始数据（如存储配置）会自动初始化
+- 日志输出（可选）：
+    - 启动后，检查日志是否有`Using SQLite datasource `
+
+
+
+#### MySQL模式
+
+如果你希望使用M有SQL数据库，请按照以下步骤操作：
+
+1. 准备MySQL数据库：
+
+    - 启动MySQL服务
+
+    - 创建数据库
+
+        ```sql
+        CREATE DATABASE upload_file DEFAULT CHARACTER SET utf8mb4;
+        ```
+
+    - 导入项目sql目录中的`upload-file.sql`脚本
+
+2. 运行命令：
+
+    使用以下命令启动，替换用户名和密码为你的 MySQL 配置（以下以 root/root 为例）：
+
+    ```sql
+    java -jar upload-file-backend-1.0-SNAPSHOT.jar --mysql.datasource.url="jdbc:mysql://localhost:3306/upload-file?useSSL=false&serverTimezone=Asia/Shanghai" --mysql.datasource.username=root --mysql.datasource.password=root
+    ```
+
+
+
+#### 默认端口
+
+- 服务默认运行在 `10086` 端口，可通过配置文件或参数修改：
+
+    ```bash
+    java -jar upload-file-backend-1.0-SNAPSHOT.jar --server.port=8080
+    ```
+
+    
+
+
 
 
 ## 目录结构
@@ -224,25 +305,39 @@ docker run -d --name upload-file \
 ### 后端配置文件 (application.yml)
 
 ```yaml
+# 服务端配置
 server:
-  port: 10086
+  port: 10086  # 服务运行的端口号，默认值为 10086，可通过 --server.port 参数覆盖，例如 --server.port=8080
 
+# Spring 框架相关配置
 spring:
+  # 数据源配置，默认使用 SQLite
   datasource:
-    url: jdbc:mysql://localhost:3306/upload-file?useSSL=false&serverTimezone=Asia/Shanghai
-    username: root
-    password: your-password
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:sqlite:./upload-file.db  # SQLite 数据库的连接 URL，文件路径为当前目录下的 upload-file.db
+    driver-class-name: org.sqlite.JDBC  # SQLite 的 JDBC 驱动类名，确保项目依赖中包含 sqlite-jdbc
+  # 文件上传相关配置
   servlet:
     multipart:
-      max-file-size: 500MB
-      max-request-size: 500MB
+      max-file-size: 500MB  # 单个上传文件的最大大小限制，设置为 500MB，支持大文件上传
+      max-request-size: 500MB  # 单次请求的最大大小限制，设置为 500MB，与 max-file-size 保持一致
+  # Spring 主配置
   main:
-    allow-bean-definition-overriding: true
+    allow-bean-definition-overriding: true  # 允许 Bean 定义覆盖，解决相同 Bean 名冲突问题，适用于多数据源配置
 
+# MySQL 数据源配置（可选，通过命令行或环境变量覆盖）
+mysql:
+  datasource:
+    url: ${MYSQL_URL:}  # MySQL 数据库的连接 URL，默认为空，可通过环境变量 MYSQL_URL 或命令行参数 --mysql.datasource.url 指定
+                        # 示例：jdbc:mysql://localhost:3306/upload-file?useSSL=false&serverTimezone=Asia/Shanghai
+    username: ${MYSQL_USERNAME:}  # MySQL 用户名，默认为空，可通过 MYSQL_USERNAME 或 --mysql.datasource.username 指定
+    password: ${MYSQL_PASSWORD:}  # MySQL 密码，默认为空，可通过 MYSQL_PASSWORD 或 --mysql.datasource.password 指定
+    driver-class-name: com.mysql.cj.jdbc.Driver  # MySQL 的 JDBC 驱动类名，确保项目依赖中包含 mysql-connector-java
+
+# 日志配置
 logging:
   level:
-    cn.czh.mapper: debug
+    cn.czh.mapper: debug  # 设置 cn.czh.mapper 包下的日志级别为 DEBUG，方便查看 MyBatis SQL 执行详情
+    org.springframework.jdbc: debug  # 设置 Spring JDBC 的日志级别为 DEBUG，方便调试数据源初始化和 SQL 执行
 ```
 
 
