@@ -51,6 +51,7 @@
 </template>
 
 <script>
+import sseManager from '@/utils/sse';
 import { getPassword, setPassword } from '@/utils/api';
 
 export default {
@@ -64,10 +65,16 @@ export default {
       tempPassword: '',
       inputPassword: '',
       showPasswordDialog: false,
+      mainUser: false,
     };
   },
   mounted() {
     this.getPassword();
+    sseManager.subscribe('setPassword', () => {
+      if (!this.mainUser) {
+        this.getPassword();
+      }
+    });
   },
   methods: {
     async getPassword() {
@@ -76,7 +83,7 @@ export default {
         const dataStr = res.data.toString();
         const password = dataStr.slice(0, -1);
         const mainUser = dataStr.slice(-1) === '1';
-
+        this.mainUser = mainUser;
         this.tempPassword = password;
         if (password) {
           this.tempEnablePassword = true;

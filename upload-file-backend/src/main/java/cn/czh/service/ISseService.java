@@ -6,23 +6,13 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 public interface ISseService {
 
     /**
-     * 订阅共享文件更新
+     * 通用订阅
      */
-    SseEmitter subscribeSharedFiles(String clientId);
+    SseEmitter subscribe(String remoteAddr);
 
     /**
-     * 订阅系统事件
+     * 通用通知
      */
-    SseEmitter subscribeSystemEvent(String clientId);
-
-    /**
-     * 通知共享文件更新
-     */
-    void notifySharedFileUpdate(String message);
-
-    /**
-     * 通知系统事件
-     */
-    void notifySystemEvent(NotifyMessage message);
+    void notification(NotifyMessage message);
 
 }

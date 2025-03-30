@@ -18,16 +18,13 @@ public class SseController {
     @Resource
     private ISseService sseService;
 
-    @GetMapping("/subscribeSharedFiles")
-    public SseEmitter subscribeSharedFiles(HttpServletRequest request) {
+    /**
+     * 通用订阅
+     */
+    @GetMapping("/subscribe")
+    public SseEmitter subscribe(HttpServletRequest request) {
         String remoteAddr = request.getRemoteAddr();
-        return sseService.subscribeSharedFiles(remoteAddr);
-    }
-
-    @GetMapping("/subscribeSystemEvent")
-    public SseEmitter subscribeSystemEvent(HttpServletRequest request) {
-        String remoteAddr = request.getRemoteAddr();
-        return sseService.subscribeSystemEvent(remoteAddr);
+        return sseService.subscribe(remoteAddr);
     }
 
 

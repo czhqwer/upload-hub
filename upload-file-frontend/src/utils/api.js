@@ -1,4 +1,4 @@
-import { http, baseUrl, httpExtra } from './http';
+import { http, httpExtra } from './http';
 
 /**
  * 获取上传进度
@@ -271,60 +271,6 @@ const setPassword = (password) => {
     return http.post("/config/setPassword", formData);
 }
 
-/**
- * 订阅共享文件更新
- * @param {Function} callback 文件更新的回调函数
- * @returns {EventSource} 返回 EventSource 实例
- */
-const subscribeSharedFiles = (callback) => {
-    const eventSource = new EventSource(`${baseUrl}/sse/subscribeSharedFiles`);
-
-    eventSource.addEventListener('sharedFileUpdate', (event) => {
-        callback(event.data);
-    });
-    
-    eventSource.onerror = (error) => {
-        console.error("SSE连接异常:", error);
-        if (eventSource.readyState === EventSource.CLOSED) {
-            console.log("连接已关闭");
-        }
-    };
-
-    return eventSource;
-};
-
-/**
- * 订阅系统事件更新
- * @param {Function} callback 文件更新的回调函数
- * @returns {EventSource} 返回 EventSource 实例
- */
-const subscribeSystemEvent = (callback) => {
-    const eventSource = new EventSource(`${baseUrl}/sse/subscribeSystemEvent`);
-
-    eventSource.addEventListener('systemEvent', (event) => {
-        try {
-            const data = JSON.parse(event.data);
-            callback(data);
-        } catch (e) {
-            console.error('JSON解析失败:', e, '原始数据:', event.data);
-        }
-    });
-
-    eventSource.onmessage = (event) => {
-        console.log('[SSE] Received default message:', event.data);
-    };
-    
-    eventSource.onerror = (error) => {
-        console.error("SSE连接异常:", error);
-        if (eventSource.readyState === EventSource.CLOSED) {
-            console.log("连接已关闭");
-        }
-    };
-    
-    return eventSource;
-}
-
-
 export {
     getUploadProgress,
     createMultipartUpload,
@@ -345,7 +291,5 @@ export {
     setPassword,
     addSharedFile,
     deleteFile,
-    subscribeSharedFiles,
-    subscribeSystemEvent,
     httpExtra
 };

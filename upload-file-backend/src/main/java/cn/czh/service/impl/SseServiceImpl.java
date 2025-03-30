@@ -16,41 +16,23 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class SseServiceImpl implements ISseService {
 
-    private final Map<String, SseEmitter> sharedFilesEmitters = new ConcurrentHashMap<>();
-    private final Map<String, SseEmitter> systemEventEmitters = new ConcurrentHashMap<>();
+    private final Map<String, SseEmitter> clientEmitters = new ConcurrentHashMap<>();
 
     @Override
-    public SseEmitter subscribeSharedFiles(String clientId) {
-        SseEmitter emitter = new SseEmitter(0L); // 设置超时时间
-        sharedFilesEmitters.put(clientId, emitter);
+    public SseEmitter subscribe(String remoteAddr) {
+        SseEmitter emitter = new SseEmitter(0L);
+        clientEmitters.put(remoteAddr, emitter);
 
-        emitter.onCompletion(() -> sharedFilesEmitters.remove(clientId));
-        emitter.onTimeout(() -> sharedFilesEmitters.remove(clientId));
-        return emitter;
-    }
-
-    @Override
-    public SseEmitter subscribeSystemEvent(String clientId) {
-        SseEmitter emitter = new SseEmitter(0L); // 设置超时时间
-        systemEventEmitters.put(clientId, emitter);
-
-        emitter.onCompletion(() -> systemEventEmitters.remove(clientId));
-        emitter.onTimeout(() -> systemEventEmitters.remove(clientId));
+        emitter.onCompletion(() -> clientEmitters.remove(remoteAddr));
+        emitter.onTimeout(() -> clientEmitters.remove(remoteAddr));
         return emitter;
     }
 
     @Async
     @Override
-    public void notifySharedFileUpdate(String message) {
-        sharedFilesEmitters.forEach((clientId, emitter) ->
-                sendNotification(clientId, emitter, "sharedFileUpdate", message, sharedFilesEmitters));
-    }
-
-    @Async
-    @Override
-    public void notifySystemEvent(NotifyMessage message) {
-        systemEventEmitters.forEach((clientId, emitter) ->
-                sendNotification(clientId, emitter, "systemEvent", JSONUtil.toJsonStr(message), systemEventEmitters));
+    public void notification(NotifyMessage message) {
+        clientEmitters.forEach((clientId, emitter) ->
+                sendNotification(clientId, emitter, message.getType(), JSONUtil.toJsonStr(message), clientEmitters));
     }
 
     private void sendNotification(String clientId, SseEmitter emitter, String event, String message, Map<String, SseEmitter> emittersMap) {

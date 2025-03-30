@@ -68,7 +68,8 @@
 </template>
 
 <script>
-import { getSharedFiles, enableShare, getShareStatus, shareAddress, unShareFile, subscribeSharedFiles, subscribeSystemEvent } from '@/utils/api';
+import sseManager from '@/utils/sse'
+import { getSharedFiles, enableShare, getShareStatus, shareAddress, unShareFile } from '@/utils/api';
 
 export default {
   name: 'ShareFile',
@@ -80,8 +81,6 @@ export default {
       fileList: [],
       enableShare: false,
       isAdmin: false,
-      sharedFilesEventSource: null,
-      systemEventSource: null,
     };
   },
   mounted() {
@@ -89,26 +88,22 @@ export default {
     this.getShareStatus();
     this.getShareAddress();
 
-    this.sharedFilesEventSource = subscribeSharedFiles(() => {
+    sseManager.subscribe('sharedFileUpdate', () => {
       this.fetchFiles();
     });
 
-    this.systemEventSource = subscribeSystemEvent((event) => {
-      if (event.type === 'enableShare') {
-        this.fileList = [];
-        this.enableShare = event.data.enable;
-        this.fetchFiles();
-      }
+    sseManager.subscribe('enableShare', (event) => {
+      this.fileList = [];
+      this.enableShare = event.enable;
+      this.fetchFiles();
     });
   },
+
   beforeDestroy() {
-    if (this.sharedFilesEventSource) {
-      this.sharedFilesEventSource.close();
-    }
-    if (this.systemEventSource) {
-      this.systemEventSource.close();
-    }
+    sseManager.unsubscribe('sharedFileUpdate');
+    sseManager.unsubscribe('enableShare');
   },
+
   methods: {
     async getShareAddress() {
       try {

@@ -58,7 +58,7 @@ public class AuthServiceImpl implements IAuthService {
         data.put("password", password);
         NotifyMessage message = new NotifyMessage("setPassword", data);
 
-        sseService.notifySystemEvent(message);
+        sseService.notification(message);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package cn.czh.service.impl;
 
 import cn.czh.base.BusinessException;
+import cn.czh.dto.NotifyMessage;
 import cn.czh.entity.SharedFile;
 import cn.czh.entity.UploadFile;
 import cn.czh.mapper.ShareFileMapper;
@@ -76,14 +77,22 @@ public class FileServiceImpl implements IFileService {
             sharedFile.setFileIdentifier(identifier);
             sharedFile.setCreateTime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
             shareFileMapper.insert(sharedFile);
-            sseService.notifySharedFileUpdate("add");
+            HashMap<String, Object> map = new HashMap<>();
+            map.put("fileIdentifier", identifier);
+            map.put("action", "add");
+            NotifyMessage message = new NotifyMessage("sharedFileUpdate", map);
+            sseService.notification(message);
         }
     }
 
     @Override
     public void removeSharedFile(String fileIdentifier) {
         shareFileMapper.delete(Wrappers.lambdaQuery(SharedFile.class).eq(SharedFile::getFileIdentifier, fileIdentifier));
-        sseService.notifySharedFileUpdate("remove");
+        HashMap<String, Object> map = new HashMap<>();
+        map.put("fileIdentifier", fileIdentifier);
+        map.put("action", "remote");
+        NotifyMessage message = new NotifyMessage("sharedFileUpdate", map);
+        sseService.notification(message);
     }
 
     @Override

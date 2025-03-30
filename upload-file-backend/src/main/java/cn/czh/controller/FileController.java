@@ -154,7 +154,7 @@ public class FileController {
         }
         enableShare = enable;
         Map<String, Object> data = MapUtil.of("enable", enable);
-        sseService.notifySystemEvent(new NotifyMessage("enableShare", data));
+        sseService.notification(new NotifyMessage("enableShare", data));
         return Result.success();
     }
 
