@@ -1,5 +1,6 @@
 package cn.czh.config;
 
+import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.jdbc.DataSourceBuilder;
@@ -49,10 +50,15 @@ public class DataSourceConfig {
         } else {
             log.info("Using SQLite database.");
             // 默认使用 SQLite，无需 username 和 password
-            return DataSourceBuilder.create()
+            DataSource dataSource = DataSourceBuilder.create()
                     .url(defaultUrl)
                     .driverClassName(defaultDriverClassName)
                     .build();
+            // SQLite是轻量数据库，默认不支持并发，设置连接池参数，确保只有一个连接
+            if (dataSource instanceof HikariDataSource) {
+                ((HikariDataSource) dataSource).setMaximumPoolSize(1);
+            }
+            return dataSource;
         }
     }
 
