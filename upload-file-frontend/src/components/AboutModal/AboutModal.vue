@@ -3,14 +3,22 @@
     <div class="about-content" @click.stop>
       <h2>关于</h2>
       <p>这个人很懒，什么都没有留下，只说自己爱吃炸排骨。。。</p>
+      <span class="version">版本号：{{ version }}</span>
     </div>
   </div>
 </template>
 
 <script>
+import packageInfo from "../../../package.json";
+
 export default {
   name: 'AboutModal',
   props: { show: Boolean },
+  data() {
+    return {
+      version: packageInfo.version
+    };
+  },
   methods: {
     close() {
       this.$emit('close');
@@ -43,6 +51,7 @@ export default {
   width: 400px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   text-align: center;
+  position: relative;
 }
 
 .about-content h2 {
@@ -55,5 +64,12 @@ export default {
   margin: 10px 0;
   font-size: 14px;
   color: #666;
+}
+
+.version {
+  right: 10px;
+  bottom: 10px;
+  font-size: 12px;
+  color: #999;
 }
 </style>
