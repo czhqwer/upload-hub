@@ -215,7 +215,8 @@ const getShareStatus = () => {
  * @returns
  */
 const shareAddress = () => {
-    return http.get("/file/shareAddress");
+    const clientPort = window.location.port;
+    return http.get("/file/shareAddress?clientPort=" + clientPort);
 }
 
 /**

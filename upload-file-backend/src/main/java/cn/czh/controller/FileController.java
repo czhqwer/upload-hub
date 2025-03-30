@@ -164,37 +164,36 @@ public class FileController {
     }
 
     @GetMapping("/shareAddress")
-    public Result<?> getShareAddress() {
-        String ip;
-        try {
-            ip = getLocalIpAddress();
-        } catch (Exception e) {
-            log.error("获取本地IP地址失败：{}", e.getMessage(), e);
-            ip = "localhost";
-        }
-        return Result.success("http://" + ip + ":" + serverPort);
+    public Result<?> getShareAddress(Integer clientPort) {
+        String ip = getLocalIpAddress();
+        String port = clientPort != null ? clientPort.toString() : serverPort;
+        return Result.success("http://" + ip + ":" + port);
     }
 
-    private String getLocalIpAddress() throws Exception {
-        Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-        while (interfaces.hasMoreElements()) {
-            NetworkInterface networkInterface = interfaces.nextElement();
-            // 跳过回环接口和未启用的接口
-            if (networkInterface.isLoopback() || !networkInterface.isUp()) {
-                continue;
-            }
-            Enumeration<InetAddress> addresses = networkInterface.getInetAddresses();
-            while (addresses.hasMoreElements()) {
-                InetAddress addr = addresses.nextElement();
-                if (addr instanceof Inet4Address && !addr.isLoopbackAddress()) {
-                    String ip = addr.getHostAddress();
-                    if (ip.startsWith("192.168.") || ip.startsWith("10.") ||
-                            (ip.startsWith("172.") && Integer.parseInt(ip.split("\\.")[1]) >= 16 && Integer.parseInt(ip.split("\\.")[1]) <= 31)) {
-                        return ip;
+    private String getLocalIpAddress() {
+        try {
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            while (interfaces.hasMoreElements()) {
+                NetworkInterface networkInterface = interfaces.nextElement();
+                // 跳过回环接口和未启用的接口
+                if (networkInterface.isLoopback() || !networkInterface.isUp()) {
+                    continue;
+                }
+                Enumeration<InetAddress> addresses = networkInterface.getInetAddresses();
+                while (addresses.hasMoreElements()) {
+                    InetAddress addr = addresses.nextElement();
+                    if (addr instanceof Inet4Address && !addr.isLoopbackAddress()) {
+                        String ip = addr.getHostAddress();
+                        if (ip.startsWith("192.168.") || ip.startsWith("10.") ||
+                                (ip.startsWith("172.") && Integer.parseInt(ip.split("\\.")[1]) >= 16 && Integer.parseInt(ip.split("\\.")[1]) <= 31)) {
+                            return ip;
+                        }
                     }
                 }
             }
+        } catch (Exception e) {
+            log.error("获取本地IP地址失败：{}", e.getMessage(), e);
         }
-        return null;
+        return "127.0.0.1";
     }
 }
