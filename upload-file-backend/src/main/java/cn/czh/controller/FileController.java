@@ -26,6 +26,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Map;
 
@@ -141,7 +142,7 @@ public class FileController {
             return Result.error("密码错误");
         }
         if (!isMainUser && !enableShare) {
-            return Result.error("分享功能未开启");
+            return Result.success(Collections.emptyList());
         }
 
         return Result.success(fileService.listSharedFiles());
