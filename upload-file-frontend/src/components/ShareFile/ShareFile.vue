@@ -16,7 +16,7 @@
                 <label>分享地址</label>
                 <div class="address-box">
                   <span class="address">{{ shareAddress }}</span>
-                  <el-button type="text" class="copy-btn" @click="copyAddress">
+                  <el-button type="text" class="copy-btn" @click="copyLink(shareAddress)">
                     <i class="el-icon-document-copy"></i>
                   </el-button>
                 </div>
@@ -230,15 +230,6 @@ export default {
         }
       }
     },
-    copyAddress() {
-      navigator.clipboard.writeText(this.shareAddress)
-        .then(() => {
-          this.$message.success('分享地址已复制');
-        })
-        .catch(() => {
-          this.$message.error('复制分享地址失败');
-        });
-    }
   },
   computed: {
   },
