@@ -1,12 +1,12 @@
 <template>
   <div class="share-file-page">
     <!-- 顶部信息 -->
-    <div class="top-info">
+    <div class="top-info" :class="{ 'sharing-active': enableShare }">
       <div class="info-content">
         <!-- 状态徽章 -->
         <div class="status-badge">
           <i class="el-icon-share"></i>
-          <span>实时分享中</span>
+          <span>{{ enableShare ? '实时分享中' : '未开启分享' }}</span>
           <div class="glow"></div>
           <!-- 信息组 -->
           <div class="info-group">
@@ -84,6 +84,7 @@ export default {
     };
   },
   mounted() {
+    this.updateShareStatusAttribute();
     this.fetchFiles();
     this.getShareStatus();
     this.getShareAddress();
@@ -104,8 +105,15 @@ export default {
     sseManager.unsubscribe('sharedFileUpdate');
     sseManager.unsubscribe('enableShare');
   },
-
+  watch: {
+    enableShare() {
+      this.updateShareStatusAttribute();
+    }
+  },
   methods: {
+    updateShareStatusAttribute() {
+      this.$el.setAttribute('data-enable-share', this.enableShare);
+    },
     getAuth() {
       const isAdmin = localStorage.getItem('main')
       this.isAdmin = isAdmin === 'true'
@@ -286,6 +294,9 @@ export default {
       transparent,
       rgba(64, 158, 255, 0.1),
       transparent);
+}
+
+.share-file-page[data-enable-share="true"] :deep(.glow) {
   animation: glow-animation 2s infinite;
 }
 
