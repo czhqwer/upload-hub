@@ -59,5 +59,4 @@ class SSEManager {
 }
 
 const sseManager = new SSEManager(baseUrl);
-console.log('[SSE] SSEManager created', sseManager);
 export default sseManager;
