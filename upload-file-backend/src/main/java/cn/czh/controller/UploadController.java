@@ -73,7 +73,7 @@ public class UploadController {
     }
 
     @PostMapping("/part")
-    public ResponseEntity<String> uploadPart(
+    public Result<?> uploadPart(
             HttpServletRequest request,
             @RequestParam("uploadId") String uploadId,
             @RequestParam("partNumber") Integer partNumber,
@@ -81,7 +81,7 @@ public class UploadController {
         String storageType = getStorageTypeFromRequest(request);
         IStorageService storageService = storageServiceFactory.getStorageService(storageType);
         storageService.uploadPart(uploadId, partNumber, partFile);
-        return ResponseEntity.ok("分片上传成功");
+        return Result.success("分片上传成功");
     }
 
     @PostMapping("/merge")
