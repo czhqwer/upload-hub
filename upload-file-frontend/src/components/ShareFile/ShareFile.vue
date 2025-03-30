@@ -27,7 +27,7 @@
 
       </div>
 
-      <el-button :type="enableShare ? 'danger' : 'primary'" size="medium" @click="stopSharing" class="stop-btn">
+      <el-button :disabled="!isAdmin" :type="enableShare ? 'danger' : 'primary'" size="medium" @click="stopSharing" class="stop-btn">
         <i class="el-icon-switch-button"></i>
         {{ enableShare ? '终止分享' : '开始分享' }}
       </el-button>
@@ -57,7 +57,7 @@
             <el-button type="success" size="mini" plain @click="copyLink(scope.row.accessUrl)" class="action-btn">
               <i class="el-icon-link"></i>
             </el-button>
-            <el-button type="danger" size="mini" plain @click="deleteFile(scope.row.fileIdentifier)" class="action-btn">
+            <el-button v-if="isAdmin" type="danger" size="mini" plain @click="deleteFile(scope.row.fileIdentifier)" class="action-btn">
               <i class="el-icon-delete"></i>
             </el-button>
           </template>
@@ -87,6 +87,7 @@ export default {
     this.fetchFiles();
     this.getShareStatus();
     this.getShareAddress();
+    this.getAuth();
 
     sseManager.subscribe('sharedFileUpdate', () => {
       this.fetchFiles();
@@ -105,6 +106,10 @@ export default {
   },
 
   methods: {
+    getAuth() {
+      const isAdmin = localStorage.getItem('main')
+      this.isAdmin = isAdmin === 'true'
+    },
     async getShareAddress() {
       try {
         const res = await shareAddress();

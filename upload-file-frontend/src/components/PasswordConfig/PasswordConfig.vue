@@ -29,19 +29,9 @@
       </div>
     </div>
     <div class="password-config-modal">
-      <el-dialog 
-        title="请输入密码"
-        :visible.sync="showPasswordDialog"
-        width="30%"
-        :close-on-click-modal="false"
-        :show-close="false"
-        custom-class="password-dialog"
-      >
-        <el-input
-          v-model="inputPassword"
-          type="text"
-          placeholder="请输入密码"
-        />
+      <el-dialog title="请输入密码" :visible.sync="showPasswordDialog" width="30%" :close-on-click-modal="false"
+        :show-close="false" custom-class="password-dialog">
+        <el-input v-model="inputPassword" type="text" placeholder="请输入密码" />
         <span slot="footer" class="dialog-footer">
           <el-button @click="verifyPassword">确定</el-button>
         </span>
@@ -51,9 +41,9 @@
 </template>
 
 <script>
+import SparkMD5 from 'spark-md5'
 import sseManager from '@/utils/sse';
 import { getPassword, setPassword } from '@/utils/api';
-
 export default {
   name: 'PasswordConfig',
   props: {
@@ -90,6 +80,7 @@ export default {
           this.showPasswordDialog = true;
         }
 
+        localStorage.setItem('main', mainUser);
         localStorage.setItem('password', password);
         this.$emit('main-user', mainUser);
       } catch (error) {
@@ -102,17 +93,27 @@ export default {
         return;
       }
 
-      if (!this.tempEnablePassword) {
-        this.tempPassword = '';
+      let hashedPassword = '';
+      if (this.tempEnablePassword) {
+        const spark = new SparkMD5();
+        spark.append(this.tempPassword);
+        hashedPassword = spark.end();
       }
-      const res = await setPassword(this.tempPassword);
+
+      const res = await setPassword(hashedPassword);
       if (res.code === 200) {
         this.$message.success('保存成功');
         this.close();
       }
     },
     verifyPassword() {
-      if (this.tempPassword === this.inputPassword) {
+      let hashedPassword = '';
+      const spark = new SparkMD5();
+      spark.append(this.inputPassword);
+      hashedPassword = spark.end();
+
+      if (this.tempPassword === hashedPassword) {
+        this.tempPassword = this.inputPassword;
         this.showPasswordDialog = false;
         this.inputPassword = '';
       } else {
@@ -182,7 +183,7 @@ export default {
 }
 
 .form-group input {
-  width: 100%;
+  width: 95%;
   padding: 8px;
   border: 1px solid #ddd;
   border-radius: 4px;

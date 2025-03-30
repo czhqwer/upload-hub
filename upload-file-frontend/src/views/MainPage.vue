@@ -9,7 +9,7 @@
         <div class="menu-container" @mouseenter="showMenu = true" @mouseleave="showMenu = false">
           <div class="menu-icon">☰</div>
           <div v-show="showMenu" class="dropdown-menu">
-            <div class="menu-item" @click="openSettings">上传设置</div>
+            <div class="menu-item" v-if="isAdmin" @click="openSettings">上传设置</div>
             <div class="menu-item" v-if="isAdmin" @click="openStorageConfig">存储配置</div>
             <div class="menu-item" v-if="isAdmin" @click="openPasswordConfig">密码设置</div>
             <div class="menu-item" @click="openAbout">关于</div>
