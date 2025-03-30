@@ -320,6 +320,8 @@ const subscribeSystemEvent = (callback) => {
             console.log("连接已关闭");
         }
     };
+    
+    return eventSource;
 }
 
 

@@ -80,14 +80,34 @@ export default {
       fileList: [],
       enableShare: false,
       isAdmin: false,
+      sharedFilesEventSource: null,
+      systemEventSource: null,
     };
   },
   mounted() {
     this.fetchFiles();
     this.getShareStatus();
     this.getShareAddress();
-    this.subscribeSharedFiles();
-    this.subscribeSystemEvent();
+
+    this.sharedFilesEventSource = subscribeSharedFiles(() => {
+      this.fetchFiles();
+    });
+
+    this.systemEventSource = subscribeSystemEvent((event) => {
+      if (event.type === 'enableShare') {
+        this.fileList = [];
+        this.enableShare = event.data.enable;
+        this.fetchFiles();
+      }
+    });
+  },
+  beforeDestroy() {
+    if (this.sharedFilesEventSource) {
+      this.sharedFilesEventSource.close();
+    }
+    if (this.systemEventSource) {
+      this.systemEventSource.close();
+    }
   },
   methods: {
     async getShareAddress() {
@@ -112,21 +132,6 @@ export default {
         this.fileList = res.data;
       }
     },
-    subscribeSharedFiles() {
-      subscribeSharedFiles(() => {
-        this.fetchFiles();
-      });
-    },
-    subscribeSystemEvent() {
-      subscribeSystemEvent((event) => {
-        if (event.type === 'enableShare') {
-          this.fileList = [];
-          this.enableShare = event.data.enable;
-          this.fetchFiles();
-        }
-      });
-    },
-
     async downloadFile(file) {
       try {
         const adjusteUrl = this.replaceLocalhost(file.accessUrl)
@@ -154,7 +159,7 @@ export default {
       if (!this.shareAddress || !url) return url;
       const shareIp = new URL(this.shareAddress).hostname;
       return url.replace(/localhost/g, shareIp);
-    }, 
+    },
     copyLink(accessUrl) {
       const adjusteUrl = this.replaceLocalhost(accessUrl)
       if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -196,8 +201,8 @@ export default {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
-      }).then(async() => {
-        
+      }).then(async () => {
+
         const res = await unShareFile(fileIdentifier);
         if (res.code === 200) {
           this.fetchFiles();

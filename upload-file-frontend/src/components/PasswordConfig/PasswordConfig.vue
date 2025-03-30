@@ -83,6 +83,7 @@ export default {
           this.showPasswordDialog = true;
         }
 
+        localStorage.setItem('password', password);
         this.$emit('main-user', mainUser);
       } catch (error) {
         console.error('获取密码失败:', error);
