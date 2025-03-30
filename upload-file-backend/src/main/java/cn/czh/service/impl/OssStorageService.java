@@ -318,9 +318,12 @@ public class OssStorageService implements IStorageService {
      * 获取文件访问 URL
      */
     private String getFileAccessUrl(String objectName) {
-        // 返回预签名 URL，过期时间为 1 小时
-        Date expiration = new Date(new Date().getTime() + 3600 * 1000);
-        return ossClient.generatePresignedUrl(storageConfig.getBucket(), objectName, expiration).toString();
+        String endpoint = storageConfig.getEndpoint().replace("https://", "");
+        // 构造永久有效的公开 URL
+        return String.format("https://%s.%s/%s",
+                storageConfig.getBucket(),
+                endpoint,
+                objectName);
     }
 
     /**
