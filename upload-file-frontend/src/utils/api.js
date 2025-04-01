@@ -271,6 +271,60 @@ const setPassword = (password) => {
     return http.post("/config/setPassword", formData);
 }
 
+/**
+ * 获取磁盘列表
+ * @returns 
+ */
+const getLocalDrives = () => {
+    return http.get("/localFile/getDrives");
+}
+
+/**
+ * 构建本地文件索引
+ * @param {array} drives 
+ * @returns 
+ */
+const buildIndex = (drives) => {
+    return http.post('/localFile/buildIndex', drives);
+}
+
+/**
+ * 查找本地文件
+ * @param {string} keyword 
+ * @returns 
+ */
+const localFileSearch = (keyword) => {
+    return http.get("/localFile/search", {
+        params: {
+            keyword
+        }
+    });
+}
+
+/**
+ * 打开文件资源管理器
+ * @param {string} dir 
+ * @returns 
+ */
+const openDir = (dir) => {
+    const formData = new FormData();
+    formData.append('dir', dir);
+    return http.post("/localFile/openDir", formData);
+}
+
+/**
+ * 查询文件树
+ * @param {string} path 
+ * @param {boolean} showFiles 
+ * @param {boolean} showFolders 
+ * @returns 
+ */
+const getFileTree = (path, showFiles, showFolders, maxDepth) => {
+    return http.get("/localFile/getFileTree", {
+        params: { path, showFiles, showFolders, maxDepth }
+    });
+}
+
 export {
     getUploadProgress,
     createMultipartUpload,
@@ -291,5 +345,10 @@ export {
     setPassword,
     addSharedFile,
     deleteFile,
+    getLocalDrives,
+    buildIndex,
+    localFileSearch,
+    openDir,
+    getFileTree,
     httpExtra
 };

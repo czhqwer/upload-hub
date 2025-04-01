@@ -23,7 +23,7 @@
           <div class="tab-underline"></div>
         </div>
       </div>
-      <div v-if="activeTab !== 'gallery' && activeTab !== 'shared' && !isWipTab" class="upload-content">
+      <div v-if="activeTab !== 'gallery' && activeTab !== 'toolbox' && activeTab !== 'shared' && !isWipTab" class="upload-content">
         <upload-file :file-list.sync="fileList" :accept="allowedFormats" :max-size="maxUploadSize" width="100%"
           height="400px" :storage-type="activeTab" />
       </div>
@@ -36,6 +36,7 @@
         </div>
       </div>
       <share-file v-else-if="activeTab === 'shared'" />
+      <file-toolbox v-else-if="activeTab === 'toolbox'" />
       <file-gallery v-else />
       <settings-modal :show="showSettings" :allowed-formats="allowedFormats" :max-upload-size="maxUploadSize"
         @save="saveSettings" @close="closeSettings" />
@@ -54,10 +55,11 @@ import StorageConfigModal from '@/components/StorageConfigModal/StorageConfigMod
 import AboutModal from '@/components/AboutModal/AboutModal.vue';
 import ShareFile from '@/components/ShareFile/ShareFile.vue';
 import PasswordConfig from '@/components/PasswordConfig/PasswordConfig.vue';
+import FileToolbox from '@/components/Toolbox/FileToolbox.vue';
 
 export default {
   name: 'MainPage',
-  components: { UploadFile, FileGallery, SettingsModal, StorageConfigModal, AboutModal, ShareFile, PasswordConfig },
+  components: { UploadFile, FileGallery, SettingsModal, StorageConfigModal, AboutModal, ShareFile, PasswordConfig, FileToolbox },
   data() {
     return {
       fileList: [],
@@ -87,6 +89,7 @@ export default {
       { label: 'QiNiu', value: 'qiniu' },
       { label: '共享文件', value: 'shared' },
       ...(this.isAdmin ? [{ label: '已上传文件', value: 'gallery' }] : []),
+      { label: '工具箱', value: 'toolbox' },
     ];
   },
     isWipTab() {

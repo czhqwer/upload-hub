@@ -1,7 +1,8 @@
 package cn.czh.service.impl;
 
+import cn.czh.dto.FileNode;
 import cn.czh.dto.IndexResult;
-import cn.czh.service.IFileSearchService;
+import cn.czh.service.ILocalFileService;
 import cn.czh.utils.FileSearchUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,7 +15,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-public class FileSearchServiceImpl implements IFileSearchService {
+public class LocalFileServiceImpl implements ILocalFileService {
 
     @Resource
     private FileSearchUtil fileSearchUtil;
@@ -75,5 +76,45 @@ public class FileSearchServiceImpl implements IFileSearchService {
     @Override
     public List<String> searchFiles(String keyword) {
         return fileSearchUtil.search(keyword);
+    }
+
+    @Override
+    public FileNode getFileTree(String path, boolean showFiles, boolean showFolders, int maxDepth) {
+        File root = new File(path);
+        if (!root.exists() || !root.isDirectory()) {
+            return null;
+        }
+        return buildFileTree(root, showFiles, showFolders, 0, maxDepth);
+    }
+
+    private FileNode buildFileTree(File file, boolean showFiles, boolean showFolders, int currentDepth, int maxDepth) {
+        // 判断是否匹配类型
+        boolean matchesType = (file.isDirectory() && showFolders) || (!file.isDirectory() && showFiles);
+
+        // 如果不匹配类型，则不包含此节点
+        if (!matchesType) {
+            return null;
+        }
+
+        FileNode node = new FileNode();
+        node.setName(file.getName());
+        node.setPath(file.getAbsolutePath());
+        node.setFolder(file.isDirectory());
+
+        // 如果是目录且未达到最大深度，递归构建子节点
+        if (file.isDirectory() && (maxDepth == 0 || currentDepth < maxDepth)) {
+            File[] files = file.listFiles();
+            if (files != null) {
+                List<FileNode> children = new ArrayList<>();
+                for (File f : files) {
+                    FileNode child = buildFileTree(f, showFiles, showFolders, currentDepth + 1, maxDepth);
+                    if (child != null) {
+                        children.add(child);
+                    }
+                }
+                node.setChildren(children.isEmpty() ? null : children);
+            }
+        }
+        return node;
     }
 }
