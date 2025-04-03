@@ -2,11 +2,12 @@
   <div class="file-tree-container">
     <!-- 目录路径输入框和获取按钮 -->
     <div class="input-section">
-      <el-input
-        v-model="directoryPath"
-        placeholder="请输入或选择目录路径"
+      <SelectDir 
+        v-model="directoryPath" 
+        @change="handlePathChange"
+        :showFiles="false"
         style="width: 300px; margin-right: 10px;"
-      ></el-input>
+      />
       <el-input
         v-model.number="maxDepth"
         type="number"
@@ -64,16 +65,20 @@
 
 <script>
 import { getFileTree } from '@/utils/api';
+import SelectDir from '@/components/SelectDir/SelectDir.vue';
 
 export default {
   name: 'FileTreeComponent',
+  components: {
+    SelectDir
+  },
   data() {
     return {
       directoryPath: '',
       filterText: '',
       showFiles: true,
       showFolders: true,
-      maxDepth: 3, // 默认深度为 0，表示无限制
+      maxDepth: 3, // 默认深度为 3
       fileTreeData: [],
       textTree: '',
       defaultProps: {
@@ -100,9 +105,13 @@ export default {
     },
   },
   methods: {
+    handlePathChange(path) {
+      this.directoryPath = path;
+      this.fetchFileTree();
+    },
     async fetchFileTree() {
       if (!this.directoryPath) {
-        this.$message.warning('请输入目录路径');
+        this.$message.warning('请选择目录路径');
         return;
       }
       try {
