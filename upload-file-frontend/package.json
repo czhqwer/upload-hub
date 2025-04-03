@@ -8,6 +8,7 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "@jafri/vue-diff-view": "^0.7.0",
     "axios": "^1.8.1",
     "axios-extra": "^0.0.8",
     "core-js": "^3.8.3",
@@ -28,6 +29,7 @@
     "@babel/core": "^7.12.16",
     "@babel/eslint-parser": "^7.12.16",
     "@babel/plugin-transform-class-properties": "^7.25.9",
+    "@babel/plugin-transform-class-static-block": "^7.26.0",
     "@babel/plugin-transform-private-methods": "^7.25.9",
     "@babel/preset-env": "^7.26.9",
     "@vue/cli-plugin-babel": "~5.0.0",

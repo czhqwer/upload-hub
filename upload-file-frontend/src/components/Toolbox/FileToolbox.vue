@@ -1,4 +1,3 @@
-<!-- Toolbox.vue -->
 <template>
   <div class="toolbox-container">
     <el-row :gutter="20" class="tools-grid">
@@ -7,6 +6,7 @@
           class="tool-card" 
           @click.native="openTool(tool)"
           shadow="hover"
+          :style="{ '--tool-color': tool.color }"
         >
           <div class="tool-item">
             <i :class="tool.icon" class="tool-icon"></i>
@@ -136,7 +136,7 @@ export default {
   left: 0;
   width: 100%;
   height: 4px;
-  background: v-bind('tools[$index].color');
+  background: var(--tool-color);
 }
 
 /* 自定义模态框样式 */
@@ -160,5 +160,13 @@ export default {
 :deep(.tool-dialog .el-dialog__body) {
   padding: 20px;
   background: #ffffff;
+}
+
+:deep(.el-card.is-hover-shadow:hover)::before {
+  display: none;
+}
+
+:deep(.el-card.is-hover-shadow)::before {
+  display: none;
 }
 </style>
