@@ -6,22 +6,23 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.io.File;
 import java.util.List;
 
 @Slf4j
 @RequestMapping("/localFile")
 @RestController
-public class LocalSearchController {
+public class LocalFileController {
 
     @Resource
-    private ILocalFileService fileSearchService;
+    private ILocalFileService localFileService;
 
     /**
      * 获取系统磁盘列表
      */
     @GetMapping("/getDrives")
     public Result<?> getDrives() {
-        return Result.success(fileSearchService.getDrives());
+        return Result.success(localFileService.getDrives());
     }
 
     /**
@@ -29,7 +30,7 @@ public class LocalSearchController {
      */
     @PostMapping("/buildIndex")
     public Result<?> buildIndex(@RequestBody List<String> drives) {
-        return Result.success(fileSearchService.buildIndex(drives));
+        return Result.success(localFileService.buildIndex(drives));
     }
 
     /**
@@ -37,7 +38,7 @@ public class LocalSearchController {
      */
     @GetMapping("/search")
     public Result<?> search(@RequestParam String keyword) {
-        return Result.success(fileSearchService.searchFiles(keyword));
+        return Result.success(localFileService.searchFiles(keyword));
     }
 
     /**
@@ -66,10 +67,34 @@ public class LocalSearchController {
 
     ) {
         // 避免直接输入磁盘进去全盘扫描
-        if (path.length() == 2 && path.endsWith(":")) {
+        if (path.length() == 3 && path.endsWith(":\\") && maxDepth != 1) {
             return Result.error("请选择目录");
         }
 
-        return Result.success(fileSearchService.getFileTree(path, showFiles, showFolders, maxDepth));
+        return Result.success(localFileService.getFileTree(path, showFiles, showFolders, maxDepth));
+    }
+
+    @PostMapping("/encrypt")
+    public Result<?> encryptFile(@RequestParam String filePath, @RequestParam String password) {
+        File file = new File(filePath);
+        if (!file.exists()) {
+            return Result.error("文件不存在");
+        }
+        if (file.isDirectory()) {
+            return Result.error("不能加密目录，请选择文件");
+        }
+        return Result.success(localFileService.encryptFile(filePath, password));
+    }
+
+    @PostMapping("/decrypt") 
+    public Result<?> decryptFile(@RequestParam String filePath, @RequestParam String password) {
+        File file = new File(filePath);
+        if (!file.exists()) {
+            return Result.error("文件不存在");
+        }
+        if (file.isDirectory()) {
+            return Result.error("不能解密目录，请选择文件");
+        }
+        return Result.success(localFileService.decryptFile(filePath, password));
     }
 }

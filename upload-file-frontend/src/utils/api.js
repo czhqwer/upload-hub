@@ -325,6 +325,32 @@ const getFileTree = (path, showFiles, showFolders, maxDepth) => {
     });
 }
 
+/**
+ * 加密文件
+ * @param {string} filePath 
+ * @param {string} password 
+ * @returns 
+ */
+const encryptFile = (filePath, password) => {
+    const formData = new FormData();
+    formData.append('filePath', filePath);
+    formData.append('password', password);
+    return http.post("/localFile/encrypt", formData);
+}
+
+/**
+ * 解密文件
+ * @param {string} filePath 
+ * @param {string} password 
+ * @returns 
+ */
+const decryptFile = (filePath, password) => {
+    const formData = new FormData();
+    formData.append('filePath', filePath);
+    formData.append('password', password);
+    return http.post("/localFile/decrypt", formData);
+}
+
 export {
     getUploadProgress,
     createMultipartUpload,
@@ -350,5 +376,7 @@ export {
     localFileSearch,
     openDir,
     getFileTree,
+    encryptFile,
+    decryptFile,
     httpExtra
 };

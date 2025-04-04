@@ -31,6 +31,7 @@
             <el-radio 
               v-model="selectedPath" 
               @change="handleRadioChange(data)"
+              :disabled="!allowSelectFolder && data.folder"
             ></el-radio>
             <i :class="data.folder ? 'el-icon-folder' : 'el-icon-document'"></i>
             <span>{{ node.label }}</span>
@@ -52,6 +53,10 @@ export default {
       default: ''
     },
     showFiles: {
+      type: Boolean,
+      default: true
+    },
+    allowSelectFolder: {
       type: Boolean,
       default: true
     }
@@ -138,6 +143,9 @@ export default {
       }
     },
     handleRadioChange(data) {
+      if (!this.allowSelectFolder && data.folder) {
+        return;
+      }
       this.selectedPath = data.path;
       this.isDropdownVisible = false;
       this.$emit('change', data.path);
@@ -213,5 +221,10 @@ export default {
 
 .custom-tree-node i.el-icon-document {
   color: #909399;
+}
+
+:deep(.el-radio__label) {
+  width: 0;
+  padding: 0;
 }
 </style> 

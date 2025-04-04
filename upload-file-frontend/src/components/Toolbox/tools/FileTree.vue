@@ -122,8 +122,6 @@ export default {
             this.updateTextTree();
           });
           this.$message.success('文件树获取成功');
-        } else {
-          this.$message.error(res.msg || '获取文件树失败');
         }
       } catch (error) {
         this.$message.error('请求失败，请检查网络或路径');

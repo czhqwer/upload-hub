@@ -1,5 +1,6 @@
 package cn.czh.service.impl;
 
+import cn.czh.base.BusinessException;
 import cn.czh.dto.FileNode;
 import cn.czh.dto.IndexResult;
 import cn.czh.service.ILocalFileService;
@@ -9,7 +10,16 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
-import java.io.File;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.SecureRandom;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -19,6 +29,13 @@ public class LocalFileServiceImpl implements ILocalFileService {
 
     @Resource
     private FileSearchUtil fileSearchUtil;
+
+    private static final String ALGORITHM = "AES";
+    private static final String TRANSFORMATION = "AES/CBC/PKCS5Padding";
+    private static final int KEY_LENGTH = 256;
+    private static final int ITERATION_COUNT = 65536;
+    private static final int SALT_LENGTH = 16;
+
 
     @PreDestroy
     public void destroy() {
@@ -116,5 +133,127 @@ public class LocalFileServiceImpl implements ILocalFileService {
             }
         }
         return node;
+    }
+
+    @Override
+    public String encryptFile(String filePath, String password) {
+        Path path = Paths.get(filePath);
+        if (!Files.exists(path)) {
+            throw new BusinessException("文件未找到: " + filePath);
+        }
+
+        String encryptedFilePath = filePath + ".encrypted";
+        Path encryptedPath = Paths.get(encryptedFilePath);
+        if (Files.exists(encryptedPath)) {
+            throw new BusinessException("加密文件已存在: " + encryptedFilePath);
+        }
+
+        try {
+            byte[] salt = new byte[SALT_LENGTH];
+            new SecureRandom().nextBytes(salt);
+
+            SecretKey key = generateKey(password, salt);
+
+            Cipher cipher = Cipher.getInstance(TRANSFORMATION);
+            cipher.init(Cipher.ENCRYPT_MODE, key);
+
+            try (InputStream in = Files.newInputStream(path);
+                 OutputStream out = Files.newOutputStream(encryptedPath)) {
+
+                out.write(salt);
+
+                byte[] iv = cipher.getIV();
+                out.write(iv);
+
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                while ((bytesRead = in.read(buffer)) != -1) {
+                    byte[] output = cipher.update(buffer, 0, bytesRead);
+                    if (output != null) {
+                        out.write(output);
+                    }
+                }
+                byte[] outputBytes = cipher.doFinal();
+                if (outputBytes != null) {
+                    out.write(outputBytes);
+                }
+            }
+            return encryptedFilePath;
+        } catch (Exception e) {
+            try {
+                Files.deleteIfExists(encryptedPath);
+            } catch (IOException ex) {
+                log.error("删除加密失败的文件时出错: {}", ex.getMessage(), ex);
+            }
+            throw new BusinessException("文件加密失败", e);
+        }
+    }
+
+    @Override
+    public String decryptFile(String filePath, String password) {
+        Path path = Paths.get(filePath);
+        if (!Files.exists(path)) {
+            throw new BusinessException("文件未找到: " + filePath);
+        }
+
+        String decryptedFilePath = filePath.replace(".encrypted", "");
+        Path decryptedPath = Paths.get(decryptedFilePath);
+        if (Files.exists(decryptedPath)) {
+            throw new BusinessException("解密文件已存在: " + decryptedFilePath);
+        }
+
+        try {
+            // Read salt and IV
+            byte[] salt = new byte[SALT_LENGTH];
+            byte[] iv = new byte[16];
+            try (InputStream in = Files.newInputStream(path)) {
+                if (in.read(salt) != SALT_LENGTH) {
+                    throw new BusinessException("加密文件格式无效");
+                }
+                if (in.read(iv) != 16) {
+                    throw new BusinessException("加密文件格式无效");
+                }
+            }
+
+            SecretKey key = generateKey(password, salt);
+
+            Cipher cipher = Cipher.getInstance(TRANSFORMATION);
+            cipher.init(Cipher.DECRYPT_MODE, key, new javax.crypto.spec.IvParameterSpec(iv));
+
+            try (InputStream in = Files.newInputStream(path);
+                 OutputStream out = Files.newOutputStream(decryptedPath)) {
+
+                in.skip(SALT_LENGTH + 16);
+
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                while ((bytesRead = in.read(buffer)) != -1) {
+                    byte[] output = cipher.update(buffer, 0, bytesRead);
+                    if (output != null) {
+                        out.write(output);
+                    }
+                }
+                byte[] outputBytes = cipher.doFinal();
+                if (outputBytes != null) {
+                    out.write(outputBytes);
+                }
+            }
+            return decryptedFilePath;
+        } catch (Exception e) {
+            // 删除已生成的解密文件
+            try {
+                Files.deleteIfExists(decryptedPath);
+            } catch (IOException ex) {
+                log.error("删除解密失败的文件时出错: {}", ex.getMessage(), ex);
+            }
+            throw new BusinessException("文件解密失败", e);
+        }
+    }
+
+    private SecretKey generateKey(String password, byte[] salt) throws Exception {
+        PBEKeySpec keySpec = new PBEKeySpec(password.toCharArray(), salt, ITERATION_COUNT, KEY_LENGTH);
+        SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+        byte[] keyBytes = factory.generateSecret(keySpec).getEncoded();
+        return new SecretKeySpec(keyBytes, ALGORITHM);
     }
 }
