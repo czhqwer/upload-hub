@@ -2,8 +2,8 @@
   <div class="select-dir-container">
     <div class="input-wrapper">
       <el-input
-        v-model="selectedPath"
-        placeholder="请输入或选择目录路径"
+        v-model="displayValue"
+        :placeholder="placeholder"
         class="dir-input"
         @input="handleInputChange"
       >
@@ -28,11 +28,22 @@
           ref="tree"
         >
           <span slot-scope="{ node, data }" class="custom-tree-node">
-            <el-radio 
-              v-model="selectedPath" 
-              @change="handleRadioChange(data)"
-              :disabled="!allowSelectFolder && data.folder"
-            ></el-radio>
+            <template v-if="multiple">
+              <el-checkbox 
+                v-model="selectedPaths"
+                :label="data.path"
+                @change="handleCheckboxChange(data)"
+                :disabled="!allowSelectFolder && data.folder"
+              >
+              </el-checkbox>
+            </template>
+            <template v-else>
+              <el-radio 
+                v-model="selectedPath" 
+                @change="handleRadioChange(data)"
+                :disabled="!allowSelectFolder && data.folder"
+              ></el-radio>
+            </template>
             <i :class="data.folder ? 'el-icon-folder' : 'el-icon-document'"></i>
             <span>{{ node.label }}</span>
           </span>
@@ -49,8 +60,8 @@ export default {
   name: 'SelectDir',
   props: {
     value: {
-      type: String,
-      default: ''
+      type: [String, Array],
+      default: () => ''
     },
     showFiles: {
       type: Boolean,
@@ -59,11 +70,16 @@ export default {
     allowSelectFolder: {
       type: Boolean,
       default: true
+    },
+    multiple: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
     return {
-      selectedPath: this.value,
+      selectedPath: this.multiple ? '' : this.value,
+      selectedPaths: this.multiple ? (Array.isArray(this.value) ? this.value : []) : [],
       isDropdownVisible: false,
       treeData: [],
       defaultProps: {
@@ -73,12 +89,42 @@ export default {
       }
     };
   },
+  computed: {
+    displayValue() {
+      if (this.multiple) {
+        return this.selectedPaths.join(',');
+      }
+      return this.selectedPath;
+    },
+    placeholder() {
+      return this.multiple ? '请选择多个文件或目录' : '请输入或选择目录路径';
+    }
+  },
   watch: {
-    value(newVal) {
-      this.selectedPath = newVal;
+    value: {
+      handler(newVal) {
+        if (this.multiple) {
+          this.selectedPaths = Array.isArray(newVal) ? newVal : [];
+        } else {
+          this.selectedPath = newVal;
+        }
+      },
+      immediate: true
     },
     selectedPath(newVal) {
-      this.$emit('input', newVal);
+      if (!this.multiple) {
+        this.$emit('input', newVal);
+        this.$emit('change', newVal);
+      }
+    },
+    selectedPaths: {
+      handler(newVal) {
+        if (this.multiple) {
+          this.$emit('input', newVal);
+          this.$emit('change', newVal);
+        }
+      },
+      deep: true
     }
   },
   mounted() {
@@ -149,6 +195,12 @@ export default {
       this.selectedPath = data.path;
       this.isDropdownVisible = false;
       this.$emit('change', data.path);
+    },
+    handleCheckboxChange(data) {
+      if (!this.allowSelectFolder && data.folder) {
+        return;
+      }
+      this.$emit('change', this.selectedPaths);
     },
     handleInputChange(value) {
       // 当用户手动输入时，触发change事件
@@ -223,8 +275,17 @@ export default {
   color: #909399;
 }
 
+.checkbox-label {
+  margin-left: 8px;
+}
+
 :deep(.el-radio__label) {
   width: 0;
   padding: 0;
+}
+
+:deep(.el-checkbox__label) {
+  display: none;
+  padding-left: 0;
 }
 </style> 
