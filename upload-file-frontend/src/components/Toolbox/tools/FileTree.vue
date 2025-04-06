@@ -4,7 +4,6 @@
     <div class="input-section">
       <SelectDir 
         v-model="directoryPath" 
-        @change="handlePathChange"
         :showFiles="false"
         style="width: 300px; margin-right: 10px;"
       />
@@ -88,6 +87,11 @@ export default {
     };
   },
   watch: {
+    directoryPath(newVal) {
+      if (newVal) {
+        this.fetchFileTree();
+      }
+    },
     filterText(val) {
       this.$refs.tree.filter(val);
       this.$nextTick(() => {
@@ -105,10 +109,6 @@ export default {
     },
   },
   methods: {
-    handlePathChange(path) {
-      this.directoryPath = path;
-      this.fetchFileTree();
-    },
     async fetchFileTree() {
       if (!this.directoryPath) {
         this.$message.warning('请选择目录路径');
